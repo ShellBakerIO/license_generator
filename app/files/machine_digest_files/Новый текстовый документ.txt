@@ -1,0 +1,71 @@
+from fastapi import FastAPI, File, UploadFile
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+from pydantic import BaseModel
+import shutil
+import os
+
+
+app = FastAPI()
+
+#uuid
+class LicenseInfo(BaseModel):
+    company_name: str
+    product_name: str
+    lic_num: int
+    exp_time: str
+    machine_digest_name: str
+    lic_file_name: str
+
+
+#
+
+
+@app.post("/generate_license")
+def generate_license(lic_info: LicenseInfo, upload_file: UploadFile = File(...)):
+    path = f"machine_digest_files/{upload_file.filename}"
+
+    with open(path, "wb+") as buffer:
+        shutil.copyfileobj(upload_file.file, buffer)
+
+    new_str = open(f"machine_digest_files/{upload_file.filename}", "r", encoding="utf-8").readline()
+    new_str = new_str[::-1]
+    license = open(f"licenses/{lic_info.lic_file_name}", mode='w')
+    license.write(new_str)
+    license.close()
+    return {
+        "file": upload_file,
+        "filename": path,
+        "type": upload_file.content_type
+    }
+
+
+@app.delete("/delete_license")
+def delete_license(lic_file_name):
+    deleted_file = lic_file_name
+    os.remove(f"licenses/{deleted_file}")
+    return {"message": f"Лицензия {deleted_file} удалена"}
+
+
+@app.post("/upload")
+async def get_file(upload_file: UploadFile = File(...)):
+    path = f"machine_digest_files/{upload_file.filename}"
+
+    with open(path, "wb+") as buffer:
+        shutil.copyfileobj(upload_file.file, buffer)
+
+    return {
+        "file": upload_file,
+        "filename": path,
+        "type": upload_file.content_type
+    }
+
+
+@app.get("/download/{file_name}", response_class=FileResponse)
+async def download_file(file_name: str):
+    path = f"machine_digest_files/{file_name}"
+    return path
+
+
+app.mount("/static", StaticFiles(directory="machine_digest_files"), name="machine_digest_files")
+app.mount("/static", StaticFiles(directory="licenses"), name="licenses")
