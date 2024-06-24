@@ -61,29 +61,23 @@ def find_license(id: int):
 
 @app.post("/generate_license")
 def generate_license(lic: LicensesInfo = Depends(LicensesInfo.as_form), machine_digest_file: UploadFile = File(...)):
-    try:
-        with Session(bind=engine) as db:
-            license = create_license(lic, machine_digest_file)
-            db.add(license)
-            db.commit()
-
-        new_license = overwriting_file(machine_digest_file, lic.lic_file_name)
-
-        return {
-            "status": "success",
-            "message": f"Лицензия {new_license.name} создана",
-        }
-    except UnicodeDecodeError:
+    if machine_digest_file.content_type != "text/plain":
         return {
             "status": "error",
             "message": "Content-type must be text/plain"
         }
-    except Exception:
-        return {
-            "status": "error",
-            "message": None
 
-        }
+    with Session(bind=engine) as db:
+        license = create_license(lic, machine_digest_file)
+        db.add(license)
+        db.commit()
+
+    new_license = overwriting_file(machine_digest_file, lic.lic_file_name)
+
+    return {
+        "status": "success",
+        "message": f"Лицензия {new_license.name} создана",
+    }
 
 
 @app.delete("/delete_license")
@@ -109,5 +103,5 @@ def delete_license(id: int):
         }
 
 
-app.mount("/static", StaticFiles(directory="app/files/machine_digest_files"), name="machine_digest_files")
-app.mount("/static", StaticFiles(directory="app/files/licenses"), name="licenses")
+app.mount("/app", StaticFiles(directory="app/files/machine_digest_files"), name="machine_digest_files")
+app.mount("/app", StaticFiles(directory="app/files/licenses"), name="licenses")

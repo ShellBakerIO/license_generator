@@ -7,9 +7,6 @@ services:
       - "5432:5432"
     networks:
       - default
-#    command: -p 1221
-#    expose:
-#      - 1221
     env_file:
       - .env-non-dev
     environment:
