@@ -2,12 +2,9 @@ from fastapi import FastAPI, UploadFile, Form, File, Depends
 from fastapi.staticfiles import StaticFiles
 import os
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, sessionmaker
 from app.auth.crud import create_license, overwriting_file
-from app.auth.models import engine, Licenses
-
-
-app = FastAPI(tittle="LicenseGenerator")
+from app.auth.models import engine, Licenses, Base
 
 
 class LicensesInfo(BaseModel):
@@ -28,49 +25,35 @@ class LicensesInfo(BaseModel):
                    lic_file_name=lic_file_name)
 
 
-@app.get("/licenses")
-def get_all_licenses():
-    try:
-        with Session(autoflush=False, bind=engine) as db:
-            all_licenses = db.query(Licenses).all()
-        return {
-            "status": "success",
-            "all_licenses": all_licenses
-        }
-    except Exception:
-        return {
-            "status": "error"
-        }
+app = FastAPI(tittle="LicenseGenerator")
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
-@app.get("/license/{id}")
-def find_license(id: int):
+def get_db():
+    database = SessionLocal()
     try:
-        with Session(autoflush=False, bind=engine) as db:
-            license = db.get(Licenses, id)
-        return {
-            "status": "success",
-            "message": license
-        }
-    except Exception:
-        return {
-            "status": "error",
-            "message": f"Лицензия с id-{id} не найдена"
-        }
+        yield database
+    finally:
+        database.close()
+
+
+@app.on_event("startup")
+async def startup():
+    Base.metadata.create_all(bind=engine)
 
 
 @app.post("/generate_license")
-def generate_license(lic: LicensesInfo = Depends(LicensesInfo.as_form), machine_digest_file: UploadFile = File(...)):
+def generate_license(lic: LicensesInfo = Depends(LicensesInfo.as_form), machine_digest_file: UploadFile = File(...), db: Session = Depends(get_db)):
     if machine_digest_file.content_type != "text/plain":
         return {
             "status": "error",
             "message": "Content-type must be text/plain"
         }
 
-    with Session(bind=engine) as db:
-        license = create_license(lic, machine_digest_file)
-        db.add(license)
-        db.commit()
+    license = create_license(lic, machine_digest_file)
+    db.add(license)
+    db.commit()
+    db.refresh(license)
 
     new_license = overwriting_file(machine_digest_file, lic.lic_file_name)
 
@@ -80,16 +63,47 @@ def generate_license(lic: LicensesInfo = Depends(LicensesInfo.as_form), machine_
     }
 
 
-@app.delete("/delete_license")
-def delete_license(id: int):
-    try:
-        with Session(autoflush=False, bind=engine) as db:
-            license = db.get(Licenses, id)
-            deleted_file_name = license.lic_file_name
-            db.delete(license)
-            db.commit()
+@app.get("/all_licenses")
+def get_all_licenses(db: Session = Depends(get_db)):
+    all_licenses = db.query(Licenses).all()
 
-        os.remove(f"app/files/licenses/{deleted_file_name}")
+    if not all_licenses:
+        return {
+            "status": "error",
+            "all_licenses": "Список лицензий пуст"
+        }
+    return {
+        "status": "success",
+        "all_licenses": all_licenses
+    }
+
+
+@app.get("/license/{id}")
+def find_license(id: int, db: Session = Depends(get_db)):
+
+    license = db.get(Licenses, id)
+
+    if license is not None:
+        return {
+            "status": "success",
+            "message": license
+        }
+    else:
+        return {
+            "status": "error",
+            "message": f"Лицензия с id-{id} не найдена"
+        }
+
+
+@app.delete("/delete_license")
+def delete_license(id: int, db: Session = Depends(get_db)):
+    try:
+        license = db.get(Licenses, id)
+        deleted_file_name = license.lic_file_name
+        db.delete(license)
+        db.commit()
+
+        os.remove(f"C:/Users/f.nasibov/PycharmProjects/fastApiProject1/app/files/licenses/{deleted_file_name}")
 
         return {
             "status": "success",
@@ -103,5 +117,5 @@ def delete_license(id: int):
         }
 
 
-app.mount("/app", StaticFiles(directory="app/files/machine_digest_files"), name="machine_digest_files")
-app.mount("/app", StaticFiles(directory="app/files/licenses"), name="licenses")
+app.mount("/licenses", StaticFiles(directory="C:/Users/f.nasibov/PycharmProjects/fastApiProject1/app/files/licenses"), name="licenses")
+app.mount("/machine_digest_files", StaticFiles(directory="C:/Users/f.nasibov/PycharmProjects/fastApiProject1/app/files/machine_digest_files"), name="machine_digest_files")

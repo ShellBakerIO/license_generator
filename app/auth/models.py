@@ -14,6 +14,7 @@ class Base(DeclarativeBase):
 
 class Licenses(Base):
     __tablename__ = "LicensesInfo"
+
     id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
     company_name = Column(String)
     product_name = Column(String)

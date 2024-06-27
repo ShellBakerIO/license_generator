@@ -4,14 +4,14 @@ from app.auth.models import Licenses
 
 
 def overwriting_file(machine_digest_file, lic_file_name):
-    path = f"app/files/machine_digest_files/{machine_digest_file.filename}"
+    path = f"C:/Users/f.nasibov/PycharmProjects/fastApiProject1/app/files/machine_digest_files/{machine_digest_file.filename}"
     with open(path, "wb+") as buffer:
         shutil.copyfileobj(machine_digest_file.file, buffer)
 
     new_file_info = open(path, "r", encoding="utf-8").readline()
     new_file_info = new_file_info[::-1]
 
-    new_license = open(f"app/files/licenses/{lic_file_name}.txt", mode='w')
+    new_license = open(f"C:/Users/f.nasibov/PycharmProjects/fastApiProject1/app/files/licenses/{lic_file_name}.txt", mode='w')
     new_license.write(new_file_info)
     new_license.close()
     return new_license
