@@ -1,10 +1,13 @@
-from fastapi import FastAPI, UploadFile, Form, File, Depends
+from typing import Annotated
+from fastapi import FastAPI, UploadFile, Form, File, Depends, HTTPException, status
 from fastapi.staticfiles import StaticFiles
 import os
 from pydantic import BaseModel
 from sqlalchemy.orm import Session, sessionmaker
 from app.auth.crud import create_license, overwriting_file
+from app.auth.ldap import get_user_info_by_username
 from app.auth.models import engine, Licenses, Base
+from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 
 
 class LicensesInfo(BaseModel):
@@ -42,8 +45,40 @@ async def startup():
     Base.metadata.create_all(bind=engine)
 
 
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token")
+
+
+async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
+    user = token
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return user
+
+
+@app.post("/token")
+async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: Session = Depends(get_db)):
+    if get_user_info_by_username(form_data.username, form_data.password) is False:
+        raise HTTPException(status_code=400, detail="Incorrect username or password")
+
+    return {
+        "access_token": form_data.username,
+        "token_type": "bearer"
+    }
+
+
+@app.get("/users/me")
+async def read_users_me(current_user: Annotated[Session, Depends(get_current_user)]):
+    return current_user
+
+
 @app.post("/generate_license")
-def generate_license(lic: LicensesInfo = Depends(LicensesInfo.as_form), machine_digest_file: UploadFile = File(...), db: Session = Depends(get_db)):
+def generate_license(current_user: Annotated[Session, Depends(get_current_user)], lic: LicensesInfo = Depends(LicensesInfo.as_form),
+                     machine_digest_file: UploadFile = File(...),
+                     db: Session = Depends(get_db)):
     if machine_digest_file.content_type != "text/plain":
         return {
             "status": "error",
@@ -54,17 +89,16 @@ def generate_license(lic: LicensesInfo = Depends(LicensesInfo.as_form), machine_
     db.add(license)
     db.commit()
     db.refresh(license)
-
-    new_license = overwriting_file(machine_digest_file, lic.lic_file_name)
+    new_license_file = overwriting_file(machine_digest_file, lic.lic_file_name)
 
     return {
         "status": "success",
-        "message": f"Лицензия {new_license.name} создана",
+        "message": f"Лицензия {new_license_file.name} создана"
     }
 
 
 @app.get("/all_licenses")
-def get_all_licenses(db: Session = Depends(get_db)):
+def get_all_licenses(current_user: Annotated[Session, Depends(get_current_user)], db: Session = Depends(get_db)):
     all_licenses = db.query(Licenses).all()
 
     if not all_licenses:
@@ -79,7 +113,7 @@ def get_all_licenses(db: Session = Depends(get_db)):
 
 
 @app.get("/license/{id}")
-def find_license(id: int, db: Session = Depends(get_db)):
+def find_license(id: int, current_user: Annotated[Session, Depends(get_current_user)], db: Session = Depends(get_db)):
 
     license = db.get(Licenses, id)
 
@@ -96,7 +130,7 @@ def find_license(id: int, db: Session = Depends(get_db)):
 
 
 @app.delete("/delete_license")
-def delete_license(id: int, db: Session = Depends(get_db)):
+def delete_license(id: int, current_user: Annotated[Session, Depends(get_current_user)], db: Session = Depends(get_db)):
     try:
         license = db.get(Licenses, id)
         deleted_file_name = license.lic_file_name

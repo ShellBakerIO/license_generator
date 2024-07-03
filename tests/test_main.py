@@ -1,35 +1,14 @@
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, StaticPool
-from sqlalchemy.orm import sessionmaker
-from app.auth.models import Base
-from app.main import app, get_db
+from app.main import app
 
 client = TestClient(app)
-
-
-DATABASE_URL = "sqlite:///:memory:"
-engine = create_engine(
-    DATABASE_URL,
-    connect_args={
-        "check_same_thread": False,
-    },
-    poolclass=StaticPool,
-)
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
 machine_digest_file = "test_machine_digest_file.txt"
 
 
-def override_get_db():
-    database = TestingSessionLocal()
-    yield database
-    database.close()
-
-
-app.dependency_overrides[get_db] = override_get_db
-
-
-Base.metadata.create_all(bind=engine)
+def get_all_licenses():
+    response = client.get('/all_licenses')
+    data = response.json()
+    return data["all_licenses"]
 
 
 def test_generate_license():
@@ -51,33 +30,37 @@ def test_generate_license():
 
 
 def test_all_licenses():
-    response = client.get(f'/all_licenses')
+    response = client.get('/all_licenses')
 
     assert response.status_code == 200
-    assert response.json() == {
+    data = response.json()
+    assert data == {
         'status': 'success',
-        'all_licenses': None
+        'all_licenses': data["all_licenses"]
     }
 
 
 def test_find_license():
-    id = 1
+    data = get_all_licenses()
+    id = data[-1]['id']
     response = client.get(f"/license/{id}")
 
     assert response.status_code == 200
     assert response.json() == {
         "status": "success",
-        "message": None
+        "message": data[-1],
     }
 
 
 def test_delete_license():
-    id = 1
+    data = get_all_licenses()
+    id = data[-1]['id']
+    license_file_name = data[-1]['lic_file_name']
     response = client.delete("/delete_license", params={"id": id})
 
     assert response.status_code == 200, response.text
-    data = response.json()
-    assert data["id"] == id
-
-
-Base.metadata.drop_all(bind=engine)
+    assert response.json() == {
+        'status': 'success',
+        'message': f'Лицензия id-{id} name-{license_file_name} удалена',
+        'license': data[-1]
+    }
