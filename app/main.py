@@ -1,13 +1,19 @@
-from typing import Annotated
-from fastapi import FastAPI, UploadFile, Form, File, Depends, HTTPException, status
-from fastapi.staticfiles import StaticFiles
 import os
+import shutil
+import subprocess
+from datetime import datetime
+from typing import Annotated
+from loguru import logger
+
+from fastapi import FastAPI, UploadFile, Form, File, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from sqlalchemy.orm import Session, sessionmaker
-from app.auth.crud import create_license, overwriting_file
+
+from app.auth.crud import create_license, transliterate_license_filename
 from app.auth.ldap import get_user_info_by_username
 from app.auth.models import engine, Licenses, Base
-from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 
 
 class LicensesInfo(BaseModel):
@@ -15,17 +21,15 @@ class LicensesInfo(BaseModel):
     product_name: str
     lic_num: int
     exp_time: str
-    lic_file_name: str
 
     @classmethod
     def as_form(cls, company_name: str = Form(...), product_name: str = Form(...),
-                lic_num: int = Form(...), exp_time: str = Form(...), lic_file_name: str = Form(...)):
+                lic_num: int = Form(...), exp_time: str = Form(...)):
 
         return cls(company_name=company_name,
                    product_name=product_name,
                    lic_num=lic_num,
-                   exp_time=exp_time,
-                   lic_file_name=lic_file_name)
+                   exp_time=exp_time)
 
 
 app = FastAPI(tittle="LicenseGenerator")
@@ -79,21 +83,25 @@ async def read_users_me(current_user: Annotated[Session, Depends(get_current_use
 def generate_license(current_user: Annotated[Session, Depends(get_current_user)], lic: LicensesInfo = Depends(LicensesInfo.as_form),
                      machine_digest_file: UploadFile = File(...),
                      db: Session = Depends(get_db)):
-    if machine_digest_file.content_type != "text/plain":
-        return {
-            "status": "error",
-            "message": "Content-type must be text/plain"
-        }
 
-    license = create_license(lic, machine_digest_file)
+    today_date = datetime.now().strftime('%d-%m-%Y')
+    lic_file_name = transliterate_license_filename(lic.company_name, lic.product_name, lic.lic_num) + f"_{lic.exp_time}"
+    machine_digest_file_name = transliterate_license_filename(lic.company_name, lic.product_name, lic.lic_num) + f"_{today_date}"
+
+    license = create_license(lic, machine_digest_file_name, lic_file_name)
     db.add(license)
     db.commit()
     db.refresh(license)
-    new_license_file = overwriting_file(machine_digest_file, lic.lic_file_name)
+
+    path = f"C:/Users/f.nasibov/PycharmProjects/fastApiProject1/app/files/machine_digest_files/{machine_digest_file_name}"
+    with open(path, "wb+") as buffer:
+        shutil.copyfileobj(machine_digest_file.file, buffer)
+
+    subprocess.run(["python", "C:/Users/f.nasibov/PycharmProjects/fastApiProject1/app/auth/script.py", f"{lic.company_name}", f"{lic.product_name}", f"{lic.lic_num}", f"{lic.exp_time}", f"{machine_digest_file_name}", f"{lic_file_name}",], )
 
     return {
         "status": "success",
-        "message": f"Лицензия {new_license_file.name} создана"
+        "message": f"Лицензия {lic_file_name} создана"
     }
 
 
