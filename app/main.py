@@ -64,9 +64,9 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
 
 
 @app.post("/token")
-async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: Session = Depends(get_db)):
+async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
     if get_user_info_by_username(form_data.username, form_data.password) is False:
-        logger.bind(user=form_data.username).error("Неудачная попытка войти в систему пользователя")
+        logger.bind(user=form_data.username).error("Неудачная попытка войти в систему")
         raise HTTPException(status_code=400, detail="Incorrect username or password")
 
     logger.bind(user=form_data.username).info("В систему вошел пользователь")
@@ -95,11 +95,11 @@ def generate_license(current_user: Annotated[Session, Depends(get_current_user)]
     db.commit()
     db.refresh(license)
 
-    path = f"C:/Users/f.nasibov/PycharmProjects/fastApiProject1/app/files/machine_digest_files/{machine_digest_file_name}"
+    path = f"app/files/machine_digest_files/{machine_digest_file_name}"
     with open(path, "wb+") as buffer:
         shutil.copyfileobj(machine_digest_file.file, buffer)
 
-    subprocess.run(["python", "C:/Users/f.nasibov/PycharmProjects/fastApiProject1/app/auth/script.py", f"{lic.company_name}", f"{lic.product_name}", f"{lic.lic_num}", f"{lic.exp_time}", f"{machine_digest_file_name}", f"{lic_file_name}",], )
+    subprocess.run(["python", "app/auth/script.py", f"{lic.company_name}", f"{lic.product_name}", f"{lic.lic_num}", f"{lic.exp_time}", f"{machine_digest_file_name}", f"{lic_file_name}",], )
 
     logger.bind(lic_file_name=lic_file_name, user=current_user).info(f"Создана лицензия")
     return {
@@ -156,7 +156,7 @@ def delete_license(id: int, current_user: Annotated[Session, Depends(get_current
         db.delete(license)
         db.commit()
 
-        os.remove(f"C:/Users/f.nasibov/PycharmProjects/fastApiProject1/app/files/licenses/{deleted_file_name}")
+        os.remove(f"app/files/licenses/{deleted_file_name}")
 
         shadow_logger.info("Удалена лицензия с id")
         return {
@@ -172,7 +172,7 @@ def delete_license(id: int, current_user: Annotated[Session, Depends(get_current
         }
 
 
-app.mount("/licenses", StaticFiles(directory="C:/Users/f.nasibov/PycharmProjects/fastApiProject1/app/files/licenses"), name="licenses")
-app.mount("/machine_digest_files", StaticFiles(directory="C:/Users/f.nasibov/PycharmProjects/fastApiProject1/app/files/machine_digest_files"), name="machine_digest_files")
+app.mount("/licenses", StaticFiles(directory="app/files/licenses"), name="licenses")
+app.mount("/machine_digest_files", StaticFiles(directory="app/files/machine_digest_files"), name="machine_digest_files")
 
 logger.add("app/logs/log.log", level="INFO", format="{time}  ||  {level.icon}{level}  ||  {function}  ||  {message}  ||  {extra}", rotation="09:00", compression="zip", colorize=None)
