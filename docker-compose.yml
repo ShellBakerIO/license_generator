@@ -13,6 +13,8 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
       - POSTGRES_USER=${POSTGRES_USER?Variable not set}
       - POSTGRES_DB=${POSTGRES_DB?Variable not set}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
 
   app:
     build:
@@ -27,3 +29,6 @@ services:
       - default
     depends_on:
       - db
+
+volumes:
+  pg_data:

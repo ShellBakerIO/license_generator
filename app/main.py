@@ -115,10 +115,9 @@ def get_all_licenses(current_user: Annotated[Session, Depends(get_current_user)]
 
     if not all_licenses:
         shadow_logger.error(f"Попытка вывести пустой список лицензий")
-        return {
-            "status": "error",
-            "all_licenses": "Список лицензий пуст"
-        }
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Список лицензий пуст")
 
     shadow_logger.info(f"Выведен список всех лицензий")
     return {
@@ -140,10 +139,9 @@ def find_license(id: int, current_user: Annotated[Session, Depends(get_current_u
         }
     else:
         shadow_logger.error(f"Попытка удалить информацию о несуществующей лицензии с id")
-        return {
-            "status": "error",
-            "message": f"Лицензия с id-{id} не найдена"
-        }
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Лицензия с id-{id} не найдена")
 
 
 @app.delete("/delete_license")
@@ -165,11 +163,10 @@ def delete_license(id: int, current_user: Annotated[Session, Depends(get_current
             "license": license,
         }
     except Exception:
-        shadow_logger.error("Введен несуществующий id")
-        return {
-            "status": "error",
-            "message": None
-        }
+        shadow_logger.error("Попытка удалить несуществующую лицензию с id")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Лицензии с id-{id} не существует")
 
 
 app.mount("/licenses", StaticFiles(directory="app/files/licenses"), name="licenses")
