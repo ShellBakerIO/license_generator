@@ -1,7 +1,7 @@
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy import create_engine
-from app.auth.config import DB_USER, DB_PASS, DB_HOST, DB_PORT, DB_NAME
+from license_generator.app.auth.config import DB_USER, DB_PASS, DB_HOST, DB_PORT, DB_NAME
 
 
 sqlite_database = f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
@@ -18,10 +18,18 @@ class Licenses(Base):
     id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
     company_name = Column(String)
     product_name = Column(String)
-    lic_num = Column(Integer)
+    license_users_count = Column(Integer)
     exp_time = Column(DateTime)
     machine_digest_file = Column(String)
     lic_file_name = Column(String)
+
+
+class User(Base):
+    __tablename__ = "User"
+
+    id = Column(Integer, autoincrement=True, nullable=False)
+    username = Column(String, primary_key=True)
+    token = Column(String)
 
 
 Base.metadata.create_all(bind=engine)
