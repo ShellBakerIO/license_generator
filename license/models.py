@@ -24,12 +24,4 @@ class Licenses(Base):
     lic_file_name = Column(String)
 
 
-class User(Base):
-    __tablename__ = "User"
-
-    id = Column(Integer, autoincrement=True, nullable=False)
-    username = Column(String, primary_key=True)
-    token = Column(String)
-
-
 Base.metadata.create_all(bind=engine)

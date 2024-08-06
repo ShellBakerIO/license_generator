@@ -35,7 +35,7 @@ async def startup():
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     async with httpx.AsyncClient() as client:
         response = await client.get(
-            "http://auth-service-url/verify_token",
+            "http://localhost:8030/verify_token",
             headers={"Authorization": f"Bearer {token}"},
         )
         if response.status_code == 200:

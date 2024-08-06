@@ -7,9 +7,9 @@ from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from loguru import logger
 from sqlalchemy.orm import Session, sessionmaker
 
-from license.crud import create_user
-from license.ldap import authenticate
-from license.models import engine, User, Base
+from auth.crud import create_user
+from auth.ldap import authenticate
+from auth.models import engine, Base, User
 
 app = FastAPI(title="AuthService")
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
