@@ -26,30 +26,11 @@ role_accesses = Table(
 )
 
 
-class Licenses(Base):
-    __tablename__ = "LicensesInfo"
-
-    id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
-    company_name = Column(String)
-    product_name = Column(String)
-    license_users_count = Column(Integer)
-    exp_time = Column(DateTime)
-    machine_digest_file = Column(String)
-    lic_file_name = Column(String)
-
-
-class UserAuth(Base):
-    __tablename__ = "User"
-
-    id = Column(Integer, autoincrement=True, nullable=False)
-    username = Column(String, primary_key=True)
-    token = Column(String)
-
-
 class User(Base):
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
+    token = Column(String)
     roles = relationship('Role', secondary=user_roles, back_populates='users')
 
 
