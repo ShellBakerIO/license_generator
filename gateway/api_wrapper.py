@@ -6,7 +6,7 @@ from fastapi import HTTPException, Request, Response, status
 
 def router(method, path: str, response_model: Optional[Any] = None):
     """
-    Обёртка для валидации данных 
+    Обёртка для валидации данных
 
     :param method: Вызываемый объект (функция) реализующая метод http-запроса.
     :param path: Адрес эндпоинта.
@@ -14,7 +14,7 @@ def router(method, path: str, response_model: Optional[Any] = None):
     """
     app_method = method(path, response_model=response_model)
 
-    def wrapper(endpoint): # endpoint - base function
+    def wrapper(endpoint):  # endpoint - base function
         @app_method
         @wraps(endpoint)
         async def decorator(request: Request, response: Response, **kwargs):
@@ -27,6 +27,7 @@ def router(method, path: str, response_model: Optional[Any] = None):
             return response_data
 
     return wrapper
+
 
 async def send_request(request):
     return {"sorry", status.HTTP_501_NOT_IMPLEMENTED}
