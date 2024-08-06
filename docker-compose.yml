@@ -1,34 +1,81 @@
-version: "3.7"
+version: '3.7'
 services:
-  db:
-    image: postgres:15
-    container_name: db_app
+  gateway:
+    build:
+      context: ./gateway
+      dockerfile: dockerfile
+    env_file:
+      - ./gateway/.env
+    container_name: gateway
+    command: sh -c "uvicorn main:app --reload --host 0.0.0.0"
     ports:
-      - "5432:5432"
+      - '9999:8000'
+    networks:
+      - default
+    depends_on:
+      - 'auth'
+      - 'license'
+
+  auth:
+    build:
+      context: ./auth
+      dockerfile: dockerfile
+    env_file:
+      - ./auth/.env
+    container_name: authentication_service
+    command: sh -c "uvicorn main:app --reload --host 0.0.0.0"
+    networks:
+      - default
+    depends_on:
+      - users_db
+    expose:
+      - '8030'
+
+  users_db:
+    image: postgres:15
+    container_name: users_db
+    ports:
+      - '5432:5432'
     networks:
       - default
     env_file:
-      - .env-non-dev
+      - ./auth/.env
     environment:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
       - POSTGRES_USER=${POSTGRES_USER?Variable not set}
       - POSTGRES_DB=${POSTGRES_DB?Variable not set}
     volumes:
-      - pg_data:/var/lib/postgresql/data
+      - users_data:/var/lib/postgresql/data
 
-  app:
+  license:
     build:
-      context: .
+      context: ./license
+      dockerfile: dockerfile
     env_file:
-      - .env-non-dev
-    container_name: fastapi_app
-    command: ["/fastapi_app/docker/app.sh"]
-    ports:
-      - "9999:8000"
+      - ./license/.env
+    container_name: license_service
+    command: sh -c "uvicorn main:app --reload --host 0.0.0.0"
     networks:
       - default
     depends_on:
-      - db
+      - license_db
+    expose:
+      - '8060'
+
+  license_db:
+    image: postgres:15
+    container_name: license_db
+    ports:
+      - '5433:5433'
+    env_file:
+      - ./license/.env
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
+      - POSTGRES_USER=${POSTGRES_USER?Variable not set}
+      - POSTGRES_DB=${POSTGRES_DB?Variable not set}
+    volumes:
+      - licenses_data:/var/lib/postgresql/data
 
 volumes:
-  pg_data:
+  users_data:
+  licenses_data:
