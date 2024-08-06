@@ -33,8 +33,8 @@ services:
   users_db:
     image: postgres:15
     container_name: users_db
-    ports:
-      - '5432:5432'
+    expose:
+      - '5432'
     networks:
       - default
     env_file:
@@ -64,14 +64,15 @@ services:
   license_db:
     image: postgres:15
     container_name: license_db
-    ports:
-      - '5433:5432'
+    expose:
+      - '5433'
     env_file:
       - license/.env
     environment:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
       - POSTGRES_USER=${POSTGRES_USER?Variable not set}
       - POSTGRES_DB=${POSTGRES_DB?Variable not set}
+      - PGPORT=${DB_PORT}
     volumes:
       - licenses_data:/var/lib/postgresql/data
 
