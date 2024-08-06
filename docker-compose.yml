@@ -2,7 +2,7 @@ services:
   gateway:
     build:
       context: gateway
-      dockerfile: gateway/dockerfile
+      dockerfile: ./dockerfile
     env_file:
       - gateway/.env
     container_name: gateway
@@ -18,7 +18,7 @@ services:
   auth:
     build:
       context: auth
-      dockerfile: auth/dockerfile
+      dockerfile: ./dockerfile
     env_file:
       - auth/.env
     container_name: authentication_service
@@ -49,7 +49,7 @@ services:
   license:
     build:
       context: license
-      dockerfile: license/dockerfile
+      dockerfile: ./dockerfile
     env_file:
       - license/.env
     container_name: license_service
@@ -65,7 +65,7 @@ services:
     image: postgres:15
     container_name: license_db
     ports:
-      - '5433:5433'
+      - '5433:5432'
     env_file:
       - license/.env
     environment:

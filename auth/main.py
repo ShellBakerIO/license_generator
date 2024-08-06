@@ -86,7 +86,9 @@ async def login(
     db.add(user)
     db.commit()
     db.refresh(user)
-    logger.bind(user=form_data.username).info("В базу данных добавлен новый пользователь")
+    logger.bind(user=form_data.username).info(
+        "В базу данных добавлен новый пользователь"
+    )
 
     return {
         "access_token": access_token,

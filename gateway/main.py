@@ -1,10 +1,8 @@
 from typing import Annotated
 from fastapi import Depends, FastAPI, APIRouter, File, UploadFile, Request, Response
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from sqlalchemy.orm import Session
 
-from auth.admin import get_db
-from auth.schemas import UserCreate, RoleCreate, AccessCreate
+from dto.user import UserCreate, RoleCreate, AccessCreate
 from dto.license import LicensesInfo
 
 from api_wrapper import router
@@ -73,63 +71,57 @@ def find_machine_digest(
 
 @router(api_router.get, "/users/")
 def read_users(
-    skip: int = 0,
-    limit: int = 10,
-    db: Session = Depends(get_db),
     request: Request,
     response: Response,
+    skip: int = 0,
+    limit: int = 10,
 ):
     pass
 
 
 @router(api_router.post, "/users/")
 def create_user(
-    user: UserCreate,
-    db: Session = Depends(get_db),
     request: Request,
     response: Response,
+    user: UserCreate,
 ):
     pass
 
 
 @router(api_router.get, "/roles/")
 def read_roles(
-    skip: int = 0,
-    limit: int = 10,
-    db: Session = Depends(get_db),
     request: Request,
     response: Response,
+    skip: int = 0,
+    limit: int = 10,
 ):
     pass
 
 
 @router(api_router.post, "/roles/")
 def create_role(
-    role: RoleCreate,
-    db: Session = Depends(get_db),
     request: Request,
     response: Response,
+    role: RoleCreate,
 ):
     pass
 
 
 @router(api_router.get, "/accesses/")
 def read_accesses(
-    skip: int = 0,
-    limit: int = 10,
-    db: Session = Depends(get_db),
     request: Request,
     response: Response,
+    skip: int = 0,
+    limit: int = 10,
 ):
     pass
 
 
 @router(api_router.post, "/accesses/")
 def create_access(
-    access: AccessCreate,
-    db: Session = Depends(get_db),
     request: Request,
     response: Response,
+    access: AccessCreate,
 ):
     pass
 
