@@ -41,3 +41,5 @@ def find_license(id: int, current_user: Annotated[str, Depends(oauth2_scheme)]):
 def find_machine_digest(id: int, current_user: Annotated[str, Depends(oauth2_scheme)]):
     pass
 
+app.include_router(api_router)
+
