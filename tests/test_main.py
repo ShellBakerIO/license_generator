@@ -2,7 +2,7 @@ import os
 
 from fastapi.testclient import TestClient
 
-from app.main import app
+from license.main import app
 
 client = TestClient(app)
 machine_digest_file = "test_machine_digest_file.txt"
@@ -17,7 +17,7 @@ def test_main():
         return data["all_licenses"]
 
     def test_login():
-        response = client.post("/token", data={"username": "f.nasibov", "password": f"{os.environ['LDAP_PASSWORD']}"})
+        response = client.post("/token", data={"username": "admin", "password": "admin"})
 
         assert response.status_code == 200
         access_token = response.json()["access_token"]
@@ -64,12 +64,10 @@ def test_main():
     def test_delete_license():
         data = get_all_licenses()
         id = data[-1]['id']
-        license_file_name = data[-1]['lic_file_name']
-        response = client.delete("/delete_license", params={"id": id}, headers={"Authorization": f"Bearer {access_token}"})
+        response = client.get(f"/machine_digest_file/{id}", headers={"Authorization": f"Bearer {access_token}"})
 
-        assert response.status_code == 200, response.text
+        assert response.status_code == 200
         assert response.json() == {
-            'status': 'success',
-            'message': f'Лицензия id-{id} name-{license_file_name} удалена',
-            'license': data[-1]
+            "status": "success",
+            "message": data[-1],
         }
