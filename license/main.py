@@ -179,7 +179,7 @@ app.mount(
 )
 
 logger.add(
-    "logs/log.log",
+    "license/logs/log.log",
     level="INFO",
     format="{time}  ||  {level.icon}{level}  ||  {function}  ||  {message}  ||  {extra}",
     rotation="09:00",
