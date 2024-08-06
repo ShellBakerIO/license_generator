@@ -1,13 +1,14 @@
+from typing import List
+
 from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
-from typing import List
+
+import crud
 from models import SessionLocal, engine, Base
 from schemas import User, UserCreate, Role, RoleCreate, Access, AccessCreate
-import crud
 
+app = FastAPI(title="Admin API")
 Base.metadata.create_all(bind=engine)
-
-app = FastAPI()
 
 
 def get_db():

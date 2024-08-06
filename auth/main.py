@@ -1,10 +1,11 @@
 import os
 from datetime import datetime, timedelta
+
 import jwt
 from fastapi import FastAPI, Depends, HTTPException, status, APIRouter
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
-from sqlalchemy.orm import Session, sessionmaker
 from loguru import logger
+from sqlalchemy.orm import Session, sessionmaker
 
 from license.crud import create_user
 from license.ldap import authenticate

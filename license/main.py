@@ -1,21 +1,22 @@
 import shutil
 import subprocess
 from datetime import datetime
+
+import httpx
 from fastapi import FastAPI, UploadFile, File, Depends, HTTPException, status
 from fastapi.responses import FileResponse
+from fastapi.security import OAuth2PasswordBearer
 from fastapi.staticfiles import StaticFiles
 from loguru import logger
 from sqlalchemy.orm import Session, sessionmaker
 
-from auth.main import oauth2_scheme
+from crud import create_license, transliterate_license_filename
 from gateway.dto.license import LicensesInfo
 from models import engine, Licenses, Base
-from crud import create_license, transliterate_license_filename
-import httpx
-
 
 app = FastAPI(title="LicenseService")
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token")
 
 
 def get_db():
@@ -52,15 +53,24 @@ def add_license_in_db(db, lic, machine_digest_file_name, lic_file_name):
 
 
 def save_machine_digest_file(machine_digest_file, machine_digest_file_name):
-    path = f"app/files/machine_digest_files/{machine_digest_file_name}"
+    path = f"files/machine_digest_files/{machine_digest_file_name}"
     with open(path, "wb+") as buffer:
         shutil.copyfileobj(machine_digest_file.file, buffer)
 
 
 def run_script_to_save_files(lic, machine_digest_file_name, lic_file_name):
-    subprocess.run(["python", "app/auth/script.py",
-                    f"{lic.company_name}", f"{lic.product_name}", f"{lic.license_users_count}",
-                    f"{lic.exp_time}", f"{machine_digest_file_name}", f"{lic_file_name}"],)
+    subprocess.run(
+        [
+            "python",
+            "license/script.py",
+            f"{lic.company_name}",
+            f"{lic.product_name}",
+            f"{lic.license_users_count}",
+            f"{lic.exp_time}",
+            f"{machine_digest_file_name}",
+            f"{lic_file_name}",
+        ],
+    )
 
 
 @app.post("/generate_license")
@@ -77,7 +87,7 @@ def generate_license(current_user: dict = Depends(get_current_user),
     save_machine_digest_file(machine_digest_file, machine_digest_file_name)
     run_script_to_save_files(lic, machine_digest_file_name, lic_file_name)
 
-    license_path = f"app/files/licenses/{lic_file_name}.txt"
+    license_path = f"files/licenses/{lic_file_name}.txt"
     logger.bind(lic_file_name=lic_file_name, user=current_user).info("Создана лицензия")
 
     return FileResponse(license_path, filename=f"{lic_file_name}.txt")
@@ -108,7 +118,7 @@ def find_license(id: int, current_user: dict = Depends(get_current_user), db: Se
     _logger = logger.bind(id=id, user=current_user)
 
     if license is not None:
-        license_path = f"app/files/licenses/{license.lic_file_name}"
+        license_path = f"files/licenses/{license.lic_file_name}"
         _logger.info(f"Выведена информация о лицензии с id: {id}")
         return FileResponse(license_path, filename=f"{license.lic_file_name}")
     else:
@@ -122,7 +132,7 @@ def find_license(id: int, current_user: dict = Depends(get_current_user), db: Se
 def find_machine_digest(id: int, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
     license = db.get(Licenses, id)
     _logger = logger.bind(id=id, user=current_user)
-    digest_path = f"app/files/machine_digest_files/{license.machine_digest_file}"
+    digest_path = f"files/machine_digest_files/{license.machine_digest_file}"
 
     if license is not None:
         _logger.info("Выведена информацию о машинном файле с id")
@@ -134,16 +144,18 @@ def find_machine_digest(id: int, current_user: dict = Depends(get_current_user),
             detail=f"Лицензия с id-{id} не найдена")
 
 
-app.mount("/licenses",
-          StaticFiles(directory="license/licenses"),
-          name="licenses")
-app.mount("/machine_digest_files",
-          StaticFiles(directory="license/machine_digest_files"),
-          name="machine_digest_files")
+app.mount("files/licenses", StaticFiles(directory="files/licenses"), name="licenses")
+app.mount(
+    "/machine_digest_files",
+    StaticFiles(directory="files/machine_digest_files"),
+    name="machine_digest_files",
+)
 
-logger.add("app/logs/log.log",
-           level="INFO",
-           format="{time}  ||  {level.icon}{level}  ||  {function}  ||  {message}  ||  {extra}",
-           rotation="09:00",
-           compression="zip",
-           colorize=None)
+logger.add(
+    "logs/log.log",
+    level="INFO",
+    format="{time}  ||  {level.icon}{level}  ||  {function}  ||  {message}  ||  {extra}",
+    rotation="09:00",
+    compression="zip",
+    colorize=None,
+)
