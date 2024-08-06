@@ -31,26 +31,34 @@ async def startup():
 
 
 @router.get("/verify_token")
-async def verify_token(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+async def verify_token(
+    token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)
+):
+    _logger = logger.bind(username=User.username)
+
     try:
         decoded_token = jwt.decode(token, os.getenv("SECRET_KEY"), algorithms=["HS256"])
         user = db.query(User).filter(User.username == decoded_token["username"]).first()
 
         if user and decoded_token["exp"] > datetime.utcnow().timestamp():
+            _logger.info("Токен пользователя валиден")
             return {"username": user.username}
         else:
+            _logger.error("Токен пользователя не обнаружен или истек")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Token expired or invalid",
                 headers={"WWW-Authenticate": "Bearer"},
             )
     except jwt.ExpiredSignatureError:
+        _logger.error("Токен пользователя истек")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token expired",
             headers={"WWW-Authenticate": "Bearer"},
         )
     except jwt.InvalidTokenError:
+        _logger.error("Несуществующий токен")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token",
@@ -76,6 +84,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
     db.add(user)
     db.commit()
     db.refresh(user)
+    logger.bind(user=form_data.username).info("В базу данных добавлен новый пользователь")
 
     return {
         "access_token": access_token,
@@ -84,15 +93,30 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
 
 
 @app.get("/users/me")
-async def read_users_me(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+async def read_users_me(
+    token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)
+):
+    _logger = logger.bind(username=User.username)
     decoded_token = jwt.decode(token, os.getenv("SECRET_KEY"), algorithms=["HS256"])
     user = db.query(User).filter(User.username == decoded_token["username"]).first()
 
     if user and decoded_token["exp"] > datetime.utcnow().timestamp():
+        _logger.info("Токен пользователя валиден")
         return user
     else:
+        _logger.error("Токен пользователя не обнаружен или истек")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token expired or invalid",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+
+logger.add(
+    "auth/logs/log.log",
+    level="INFO",
+    format="{time}  ||  {level.icon}{level}  ||  {function}  ||  {message} || {extra}",
+    rotation="09:00",
+    compression="zip",
+    colorize=None,
+)
