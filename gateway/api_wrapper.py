@@ -14,7 +14,7 @@ def router(method, path: str, response_model: Optional[Any] = None):
     """
     app_method = method(path, response_model=response_model)
 
-    def wrapper(endpoint):  # endpoint - base function
+    def wrapper(endpoint): # endpoint - base function
         @app_method
         @wraps(endpoint)
         async def decorator(request: Request, response: Response, **kwargs):

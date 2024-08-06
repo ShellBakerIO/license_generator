@@ -1,6 +1,7 @@
 from fastapi import Form
 from pydantic import BaseModel
 
+
 class LicensesInfo(BaseModel):
     company_name: str
     product_name: str

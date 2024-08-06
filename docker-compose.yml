@@ -1,11 +1,10 @@
-version: '3.7'
 services:
   gateway:
     build:
-      context: ./gateway
-      dockerfile: dockerfile
+      context: gateway
+      dockerfile: gateway/dockerfile
     env_file:
-      - ./gateway/.env
+      - gateway/.env
     container_name: gateway
     command: sh -c "uvicorn main:app --reload --host 0.0.0.0"
     ports:
@@ -18,10 +17,10 @@ services:
 
   auth:
     build:
-      context: ./auth
-      dockerfile: dockerfile
+      context: auth
+      dockerfile: auth/dockerfile
     env_file:
-      - ./auth/.env
+      - auth/.env
     container_name: authentication_service
     command: sh -c "uvicorn main:app --reload --host 0.0.0.0"
     networks:
@@ -39,7 +38,7 @@ services:
     networks:
       - default
     env_file:
-      - ./auth/.env
+      - auth/.env
     environment:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
       - POSTGRES_USER=${POSTGRES_USER?Variable not set}
@@ -49,10 +48,10 @@ services:
 
   license:
     build:
-      context: ./license
-      dockerfile: dockerfile
+      context: license
+      dockerfile: license/dockerfile
     env_file:
-      - ./license/.env
+      - license/.env
     container_name: license_service
     command: sh -c "uvicorn main:app --reload --host 0.0.0.0"
     networks:
@@ -68,7 +67,7 @@ services:
     ports:
       - '5433:5433'
     env_file:
-      - ./license/.env
+      - license/.env
     environment:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
       - POSTGRES_USER=${POSTGRES_USER?Variable not set}
