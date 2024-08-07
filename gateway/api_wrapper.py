@@ -1,7 +1,11 @@
 from functools import wraps
-from typing import Any, Optional
+from typing import Any, Optional, Tuple
 
 from fastapi import HTTPException, Request, Response, status
+from fastapi.routing import APIRouter
+import httpx
+
+router = APIRouter()
 
 
 def router(method, path: str, response_model: Optional[Any] = None):
@@ -26,8 +30,21 @@ def router(method, path: str, response_model: Optional[Any] = None):
             response.status_code = response_status_code
             return response_data
 
+        return decorator
+
     return wrapper
 
 
-async def send_request(request):
-    return {"sorry", status.HTTP_501_NOT_IMPLEMENTED}
+async def send_request(request: Request) -> Tuple[Any, int]:
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.request(
+                method=request.method,
+                url=str(request.url),
+                headers=dict(request.headers),
+                json=await request.json() if request.method in ["POST", "PUT", "PATCH"] else None,
+                params=request.query_params if request.method == "GET" else None
+            )
+        return response.json(), response.status_code
+    except httpx.RequestError as e:
+        return {"error": str(e)}, status.HTTP_500_INTERNAL_SERVER_ERROR
