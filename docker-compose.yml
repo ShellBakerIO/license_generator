@@ -27,8 +27,8 @@ services:
       - default
     depends_on:
       - users_db
-    expose:
-      - '8030'
+    ports:
+      - '8030:8000'
 
   users_db:
     image: postgres:15
@@ -58,8 +58,8 @@ services:
       - default
     depends_on:
       - license_db
-    expose:
-      - '8060'
+    ports:
+      - '8060:8000'
 
   license_db:
     image: postgres:15
