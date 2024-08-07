@@ -1,7 +1,7 @@
 import re
 from datetime import datetime
 
-from models import Licenses, User
+from models import Licenses
 import transliterate
 
 
@@ -23,9 +23,3 @@ def create_license(lic, machine_digest_file_name, lic_file_name):
                        machine_digest_file=machine_digest_file_name,
                        lic_file_name=f"{lic_file_name}.txt")
     return license
-
-
-def create_user(username, token):
-    user = User(username=username, token=token)
-
-    return user
