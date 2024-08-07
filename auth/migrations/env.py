@@ -1,3 +1,4 @@
+import os
 from logging.config import fileConfig
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
@@ -44,9 +45,15 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = config.get_main_option("sqlalchemy.url")
+    def get_url():
+        user = os.getenv("POSTGRES_USER", "postgres")
+        password = os.getenv("POSTGRES_PASSWORD", "")
+        server = os.getenv("POSTGRES_SERVER", "db")
+        db = os.getenv("POSTGRES_DB", "app")
+        return f"postgresql://{user}:{password}@{server}/{db}"
+
     context.configure(
-        url=url,
+        url=get_url(),
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
