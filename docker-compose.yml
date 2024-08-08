@@ -2,7 +2,7 @@ services:
   gateway:
     build:
       context: gateway
-      dockerfile: ./dockerfile
+      dockerfile: ./Dockerfile
     env_file:
       - gateway/.env
     container_name: gateway
@@ -18,7 +18,7 @@ services:
   auth:
     build:
       context: auth
-      dockerfile: ./dockerfile
+      dockerfile: ./Dockerfile
     env_file:
       - auth/.env
     container_name: authentication_service
@@ -66,6 +66,8 @@ services:
     container_name: license_db
     ports:
       - '5433:5432'
+    networks:
+      - default
     env_file:
       - license/.env
     environment:

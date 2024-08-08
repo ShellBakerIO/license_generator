@@ -3,11 +3,19 @@ from models import User, Role, Access
 from schemas import UserCreate, RoleCreate, AccessCreate
 
 
-def get_users(db: Session, skip: int = 0, limit: int = 10):
-    return db.query(User).offset(skip).limit(limit).all()
+def get_users(db: Session):
+    return db.query(User).all()
 
 
-def create_user(db: Session, user: UserCreate):
+def register_user(db: Session, username, token):
+    db_user = User(username=username)
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    return db_user
+
+
+def create_user(db: Session, user: UserCreate, token):
     db_user = User(username=user.username)
     db.add(db_user)
     db.commit()
@@ -15,8 +23,8 @@ def create_user(db: Session, user: UserCreate):
     return db_user
 
 
-def get_roles(db: Session, skip: int = 0, limit: int = 10):
-    return db.query(Role).offset(skip).limit(limit).all()
+def get_roles(db: Session):
+    return db.query(Role).all()
 
 
 def create_role(db: Session, role: RoleCreate):
@@ -27,8 +35,8 @@ def create_role(db: Session, role: RoleCreate):
     return db_role
 
 
-def get_accesses(db: Session, skip: int = 0, limit: int = 10):
-    return db.query(Access).offset(skip).limit(limit).all()
+def get_accesses(db: Session):
+    return db.query(Access).all()
 
 
 def create_access(db: Session, access: AccessCreate):
