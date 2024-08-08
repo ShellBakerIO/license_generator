@@ -1,8 +1,8 @@
-from sqlalchemy.orm import DeclarativeBase, relationship, sessionmaker
-from sqlalchemy import Column, Integer, String, Table, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, String, Table, ForeignKey
 from sqlalchemy import create_engine
-from config import DB_USER, DB_PASS, DB_HOST, DB_PORT, DB_NAME
+from sqlalchemy.orm import DeclarativeBase, relationship, sessionmaker
 
+from config import DB_USER, DB_PASS, DB_HOST, DB_PORT, DB_NAME
 
 sqlite_database = f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 engine = create_engine(sqlite_database, pool_pre_ping=True, echo=True)
@@ -30,7 +30,6 @@ class User(Base):
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
-    token = Column(String)
     roles = relationship('Role', secondary=user_roles, back_populates='users')
 
 

@@ -8,7 +8,7 @@ import httpx
 router = APIRouter()
 
 
-def router(method, path: str, response_model: Optional[Any] = None):
+def gateway_router(method, path: str, response_model: Optional[Any] = None):
     """
     Обёртка для валидации данных
 
@@ -43,8 +43,11 @@ async def send_request(request: Request) -> Tuple[Any, int]:
                 url=str(request.url),
                 headers=dict(request.headers),
                 json=await request.json() if request.method in ["POST", "PUT", "PATCH"] else None,
-                params=request.query_params if request.method == "GET" else None
+                params=dict(request.query_params) if request.method == "GET" else None
             )
+        response.raise_for_status()
         return response.json(), response.status_code
+    except httpx.HTTPStatusError as e:
+        return {"error": str(e), "details": e.response.text}, e.response.status_code
     except httpx.RequestError as e:
         return {"error": str(e)}, status.HTTP_500_INTERNAL_SERVER_ERROR

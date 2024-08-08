@@ -11,7 +11,8 @@ from loguru import logger
 from sqlalchemy.orm import Session, sessionmaker
 
 from crud import create_license, transliterate_license_filename
-from gateway.dto.license import LicensesInfo
+from dto.license_dto import LicensesInfo
+
 from models import engine, Licenses, Base
 
 app = FastAPI(title="LicenseService")
@@ -34,8 +35,8 @@ async def startup():
 
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     async with httpx.AsyncClient() as client:
-        response = await client.get(
-            "http://localhost:8030/verify_token",
+        response = await client.post(
+            "http://auth:8030/token",
             headers={"Authorization": f"Bearer {token}"},
         )
         if response.status_code == 200:
@@ -56,7 +57,7 @@ def add_license_in_db(db, lic, machine_digest_file_name, lic_file_name):
 
 
 def save_machine_digest_file(machine_digest_file, machine_digest_file_name):
-    path = f"files/machine_digest_files/{machine_digest_file_name}"
+    path = f"license/files/machine_digest_files/{machine_digest_file_name}"
     with open(path, "wb+") as buffer:
         shutil.copyfileobj(machine_digest_file.file, buffer)
 
@@ -102,7 +103,7 @@ def generate_license(
     save_machine_digest_file(machine_digest_file, machine_digest_file_name)
     run_script_to_save_files(lic, machine_digest_file_name, lic_file_name)
 
-    license_path = f"files/licenses/{lic_file_name}.txt"
+    license_path = f"license/files/licenses/{lic_file_name}.txt"
     logger.bind(lic_file_name=lic_file_name, user=current_user).info("Создана лицензия")
 
     return FileResponse(license_path, filename=f"{lic_file_name}.txt")
@@ -139,7 +140,7 @@ def find_license(
     _logger = logger.bind(id=id, user=current_user)
 
     if license is not None:
-        license_path = f"files/licenses/{license.lic_file_name}"
+        license_path = f"license/files/licenses/{license.lic_file_name}"
         _logger.info(f"Выведена информация о лицензии с id: {id}")
         return FileResponse(license_path, filename=f"{license.lic_file_name}")
     else:
@@ -158,7 +159,7 @@ def find_machine_digest(
 ):
     license = db.get(Licenses, id)
     _logger = logger.bind(id=id, user=current_user)
-    digest_path = f"files/machine_digest_files/{license.machine_digest_file}"
+    digest_path = f"license/files/machine_digest_files/{license.machine_digest_file}"
 
     if license is not None:
         _logger.info("Выведена информацию о машинном файле с id")
@@ -171,12 +172,15 @@ def find_machine_digest(
         )
 
 
-app.mount("files/licenses", StaticFiles(directory="files/licenses"), name="licenses")
+app.mount(
+    "/license/files/licenses",
+    StaticFiles(directory="files/licenses"),
+    name="licenses")
+
 app.mount(
     "/machine_digest_files",
     StaticFiles(directory="files/machine_digest_files"),
-    name="machine_digest_files",
-)
+    name="machine_digest_files")
 
 logger.add(
     "license/logs/log.log",
