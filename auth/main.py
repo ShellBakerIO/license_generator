@@ -77,7 +77,7 @@ async def login(
     }
     access_token = jwt.encode(token_data, os.getenv("SECRET_KEY"), algorithms=["HS256"])
 
-    user = crud.register_user(db, form_data.username, access_token)
+    user = crud.create_user(db, form_data.username)
 
     logger.bind(user=form_data.username).info(
         "В базу данных добавлен новый пользователь"
@@ -148,44 +148,44 @@ async def verify_token(
 @app.get("/users/", response_model=List[User])
 def read_users(db: Session = Depends(get_db)):
     users = crud.get_users(db)
+    logger.info("Выведен список пользователей")
     return users
 
 
 @app.post("/users/", response_model=User)
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
-    token_data = {
-        "username": user.username,
-        "exp": datetime.utcnow() + timedelta(seconds=960),
-    }
-    access_token = jwt.encode(token_data, os.getenv("SECRET_KEY"), algorithm="HS256")
-
-    return crud.create_user(db=db, user=user, token=access_token)
+    logger.info("Добавлен новый пользователь")
+    return crud.create_user(db=db, user=user)
 
 
 @app.get("/roles/", response_model=List[Role])
 def read_roles(db: Session = Depends(get_db)):
     roles = crud.get_roles(db)
+    logger.info("Выведен список ролей")
     return roles
 
 
 @app.post("/roles/", response_model=Role)
 def create_role(role: RoleCreate, db: Session = Depends(get_db)):
+    logger.info("Добавлена новая роль")
     return crud.create_role(db=db, role=role)
 
 
 @app.get("/accesses/", response_model=List[Access])
 def read_accesses(db: Session = Depends(get_db)):
     accesses = crud.get_accesses(db)
+    logger.info("Выведен список доступов")
     return accesses
 
 
 @app.post("/accesses/", response_model=Access)
 def create_access(access: AccessCreate, db: Session = Depends(get_db)):
+    logger.info("Добавлен новый доступ")
     return crud.create_access(db=db, access=access)
 
 
 logger.add(
-    "auth/logs/log.log",
+    "/auth/logs/log.log",
     level="INFO",
     format="{time}  ||  {level.icon}{level}  ||  {function}  ||  {message} || {extra}",
     rotation="09:00",

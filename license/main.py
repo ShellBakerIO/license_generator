@@ -159,7 +159,7 @@ app.mount(
     name="machine_digest_files")
 
 logger.add(
-    "license/logs/log.log",
+    "/license/logs/log.log",
     level="INFO",
     format="{time}  ||  {level.icon}{level}  ||  {function}  ||  {message}  ||  {extra}",
     rotation="09:00",
