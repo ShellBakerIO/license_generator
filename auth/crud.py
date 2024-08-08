@@ -7,15 +7,7 @@ def get_users(db: Session):
     return db.query(User).all()
 
 
-def register_user(db: Session, username, token):
-    db_user = User(username=username)
-    db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
-    return db_user
-
-
-def create_user(db: Session, user: UserCreate, token):
+def create_user(db: Session, user: UserCreate):
     db_user = User(username=user.username)
     db.add(db_user)
     db.commit()
