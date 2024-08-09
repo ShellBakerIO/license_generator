@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Table, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, Table
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, relationship, sessionmaker
 
@@ -13,12 +13,6 @@ class Base(DeclarativeBase):
     pass
 
 
-user_roles = Table(
-    'user_roles', Base.metadata,
-    Column('user_id', Integer, ForeignKey('users.id')),
-    Column('role_id', Integer, ForeignKey('roles.id'))
-)
-
 role_accesses = Table(
     'role_accesses', Base.metadata,
     Column('role_id', Integer, ForeignKey('roles.id')),
@@ -30,22 +24,23 @@ class User(Base):
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
-    roles = relationship('Role', secondary=user_roles, back_populates='users')
+    role_id = Column(Integer, ForeignKey('roles.id'))
+    role = relationship('Role', back_populates='users')
 
 
 class Role(Base):
     __tablename__ = 'roles'
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True)
-    accesses = relationship('Access', secondary=role_accesses, back_populates='roles')
-    users = relationship('User', secondary=user_roles, back_populates='roles')
+    accesses = relationship('Access', secondary='role_accesses', back_populates='roles')
+    users = relationship('User', back_populates='role')  # Изменено на связь один-ко-многим
 
 
 class Access(Base):
     __tablename__ = 'accesses'
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True)
-    roles = relationship('Role', secondary=role_accesses, back_populates='accesses')
+    roles = relationship('Role', secondary='role_accesses', back_populates='accesses')
 
 
 Base.metadata.create_all(bind=engine)

@@ -8,7 +8,7 @@ def get_users(db: Session):
 
 
 def create_user(db: Session, user: UserCreate):
-    db_user = User(username=user.username)
+    db_user = User(username=user.username, role_id=user.role_id)
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
