@@ -1,5 +1,4 @@
 from pydantic import BaseModel
-from typing import List, Optional
 
 
 class AccessBase(BaseModel):
@@ -12,6 +11,7 @@ class AccessCreate(AccessBase):
 
 class Access(AccessBase):
     id: int
+    has_access: bool
 
     class Config:
         orm_mode = True
@@ -27,7 +27,7 @@ class RoleCreate(RoleBase):
 
 class Role(RoleBase):
     id: int
-    accesses: List[Access] = []
+    role_accesses: dict
 
     class Config:
         orm_mode = True
@@ -38,11 +38,12 @@ class UserBase(BaseModel):
 
 
 class UserCreate(UserBase):
-    role_id: int
+    pass
 
 
 class User(UserBase):
     id: int
+    role: str | None
 
     class Config:
         orm_mode = True

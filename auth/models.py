@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Table
+from sqlalchemy import Column, Integer, String, ForeignKey, Table, Boolean, JSON
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, relationship, sessionmaker
 
@@ -24,22 +24,24 @@ class User(Base):
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
-    role_id = Column(Integer, ForeignKey('roles.id'))
-    role = relationship('Role', back_populates='users')
+    role = Column(String, ForeignKey('roles.name'), default=None)
+    roles = relationship('Role', back_populates='users')
 
 
 class Role(Base):
     __tablename__ = 'roles'
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True)
+    role_accesses = Column(JSON, default={})
     accesses = relationship('Access', secondary='role_accesses', back_populates='roles')
-    users = relationship('User', back_populates='role')  # Изменено на связь один-ко-многим
+    users = relationship('User', back_populates='roles')
 
 
 class Access(Base):
     __tablename__ = 'accesses'
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True)
+    has_access = Column(Boolean, default=False)
     roles = relationship('Role', secondary='role_accesses', back_populates='accesses')
 
 
