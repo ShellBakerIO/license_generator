@@ -53,16 +53,15 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: Se
 
     try:
         decoded_token = jwt.decode(token, os.getenv("SECRET_KEY"), algorithms=["HS256"])
-        user = db.query(UserModel).filter(UserModel.username == decoded_token["username"]).first()
 
-        if user is None or decoded_token["exp"] < datetime.utcnow().timestamp():
+        if decoded_token["exp"] < datetime.utcnow().timestamp():
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Token expired or invalid",
                 headers={"WWW-Authenticate": "Bearer"}
             )
+        return decoded_token["username"]
 
-        return user
     except jwt.ExpiredSignatureError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -78,9 +77,7 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: Se
 
 
 @app.post("/token")
-async def login(
-    form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
-):
+async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = db.query(UserModel).filter(UserModel.username == form_data.username).first()
 
     if user and jwt.decode(user.token, os.getenv("SECRET_KEY"), algorithms=["HS256"])["exp"] > datetime.utcnow().timestamp():
@@ -100,11 +97,7 @@ async def login(
         "exp": datetime.utcnow() + timedelta(hours=3)
     }
 
-    access_token = jwt.encode(token_data, os.getenv("SECRET_KEY"), algorithms=["HS256"])
-    role_id = 0
-    crud.create_user(db, UserCreate(username=form_data.username), role_id)
-
-    logger.bind(user=form_data.username).info("В базу данных добавлен новый пользователь")
+    access_token = jwt.encode(token_data, os.getenv("SECRET_KEY"), algorithm="HS256")
 
     return {
         "access_token": access_token,
@@ -113,16 +106,13 @@ async def login(
 
 
 @app.get("/users/me")
-async def read_users_me(
-    token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)
-):
-    _logger = logger.bind(username=User.username)
+async def read_users_me(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     decoded_token = jwt.decode(token, os.getenv("SECRET_KEY"), algorithms=["HS256"])
-    user = db.query(UserModel).filter(UserModel.username == decoded_token["username"]).first()
+    _logger = logger.bind(username=decoded_token["username"])
 
-    if user and decoded_token["exp"] > datetime.utcnow().timestamp():
+    if decoded_token["exp"] < datetime.utcnow().timestamp():
         _logger.info("Токен пользователя валиден")
-        return user
+        return decoded_token["username"]
     else:
         _logger.error("Токен пользователя не обнаружен или истек")
         raise HTTPException(
@@ -144,64 +134,64 @@ async def verify_token(token: str = Depends(oauth2_scheme), db: Session = Depend
 
 
 @app.get("/users/", response_model=List[User])
-def read_users(db: Session = Depends(get_db)):
+def read_users(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     users = crud.get_users(db)
     logger.info("Выведен список пользователей")
     return users
 
 
 @app.post("/users/", response_model=User)
-def create_user(user: UserCreate, db: Session = Depends(get_db)):
+def create_user(user: UserCreate, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     logger.info("Добавлен новый пользователь")
     return crud.create_user(db=db, user=user)
 
 
 @app.get("/roles/", response_model=List[Role])
-def read_roles(db: Session = Depends(get_db)):
+def read_roles(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     roles = crud.get_roles(db)
     logger.info("Выведен список ролей")
     return roles
 
 
 @app.post("/roles/", response_model=Role)
-def create_role(role: RoleCreate, db: Session = Depends(get_db)):
+def create_role(role: RoleCreate, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     logger.info("Добавлена новая роль")
     return crud.create_role(db=db, role=role)
 
 
-"""@app.put("/users/{user_id}/role", response_model=User)
-def add_role_to_user(user_id: int, role_id: int, db: Session = Depends(get_db)):
+@app.patch("/users/{user_id}/", response_model=User)
+def add_role_to_user(user_id: int, role_id: int, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     try:
         user = crud.add_role_to_user(db=db, user_id=user_id, role_id=role_id)
         logger.info(f"Роль с ID {role_id} добавлена пользователю с ID {user_id}")
         return user
     except ValueError as e:
         logger.error(str(e))
-        raise HTTPException(status_code=400, detail=str(e))"""
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @app.get("/accesses/", response_model=List[Access])
-def read_accesses(db: Session = Depends(get_db)):
+def read_accesses(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     accesses = crud.get_accesses(db)
     logger.info("Выведен список доступов")
     return accesses
 
 
 @app.post("/accesses/", response_model=Access)
-def create_access(access: AccessCreate, db: Session = Depends(get_db)):
+def create_access(access: AccessCreate, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     logger.info("Добавлен новый доступ")
     return crud.create_access(db=db, access=access)
 
 
-"""@app.put("/roles/{role_id}/accesses/", response_model=Role)
-def add_access_to_role(role_id: int, access_id: int, db: Session = Depends(get_db)):
+@app.patch("/roles/{role_id}/", response_model=Role)
+def add_access_to_role(role_id: int, access_id: int, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     try:
         role = crud.add_access_to_role(db=db, role_id=role_id, access_id=access_id)
         logger.info(f"Доступ с ID {access_id} добавлен к роли с ID {role_id}")
         return role
     except ValueError as e:
         logger.error(str(e))
-        raise HTTPException(status_code=400, detail=str(e))"""
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 logger.add(
