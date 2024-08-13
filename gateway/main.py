@@ -4,6 +4,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
 from dto.user import UserCreate, RoleCreate, AccessCreate
 from dto.license import LicensesInfo
+from starlette.middleware.cors import CORSMiddleware
 
 from api_wrapper import gateway_router
 
@@ -11,6 +12,14 @@ from api_wrapper import gateway_router
 app = FastAPI()
 api_router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @gateway_router(api_router.post, "/token")
