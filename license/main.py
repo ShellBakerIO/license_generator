@@ -9,7 +9,6 @@ from fastapi.security import OAuth2PasswordBearer
 from fastapi.staticfiles import StaticFiles
 from loguru import logger
 from sqlalchemy.orm import Session, sessionmaker
-from starlette.middleware.cors import CORSMiddleware
 
 from crud import create_license, transliterate_license_filename
 from dto.license_dto import LicensesInfo
@@ -19,14 +18,6 @@ from models import engine, Licenses, Base
 app = FastAPI(title="LicenseService")
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 
 def get_db():
@@ -158,14 +149,14 @@ def find_machine_digest(id: int, current_user: dict = Depends(get_current_user),
 
 
 app.mount(
-    "/license/files/licenses",
-    StaticFiles(directory="files/licenses"),
-    name="licenses")
+    "/license/files/licenses", StaticFiles(directory="files/licenses"), name="licenses"
+)
 
 app.mount(
     "/machine_digest_files",
     StaticFiles(directory="files/machine_digest_files"),
-    name="machine_digest_files")
+    name="machine_digest_files",
+)
 
 logger.add(
     "/license/logs/log.log",
