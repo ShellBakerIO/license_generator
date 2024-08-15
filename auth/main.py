@@ -12,7 +12,7 @@ from starlette.middleware.cors import CORSMiddleware
 
 import crud
 from ldap import authenticate
-from models import SessionLocal, User as UserModel, engine, Base
+from models import SessionLocal, engine, Base
 from schemas import User, UserCreate, Role, RoleCreate, Access, AccessCreate
 
 app = FastAPI(title="AdminService")
@@ -77,32 +77,26 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: Se
 
 
 @app.post("/token")
-async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user = db.query(UserModel).filter(UserModel.username == form_data.username).first()
+async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 
-    if user and jwt.decode(user.token, os.getenv("SECRET_KEY"), algorithms=["HS256"])["exp"] > datetime.utcnow().timestamp():
+    if authenticate(form_data.username, form_data.password):
+        logger.bind(user=form_data.username).info("В систему вошел пользователь")
+
+        token_data = {
+            "username": form_data.username,
+            "exp": datetime.utcnow() + timedelta(hours=3)
+        }
+
+        access_token = jwt.encode(token_data, os.getenv("SECRET_KEY"), algorithm="HS256")
+
         return {
-            "access_token": user.token,
+            "access_token": access_token,
             "token_type": "bearer",
         }
 
-    if not authenticate(form_data.username, form_data.password):
+    else:
         logger.bind(user=form_data.username).error("Неудачная попытка войти в систему")
         raise HTTPException(status_code=400, detail="Incorrect username or password")
-
-    logger.bind(user=form_data.username).info("В систему вошел пользователь")
-
-    token_data = {
-        "username": form_data.username,
-        "exp": datetime.utcnow() + timedelta(hours=3)
-    }
-
-    access_token = jwt.encode(token_data, os.getenv("SECRET_KEY"), algorithm="HS256")
-
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-    }
 
 
 @app.get("/users/me")

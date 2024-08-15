@@ -3,16 +3,20 @@ from models import User, Role, Access
 from schemas import UserCreate, RoleCreate, AccessCreate
 
 
-def generate_access_dict(db: Session, access_id: int | None = None):
+def generate_access_dict(db: Session, role_id: int | None = None, access_id: int | None = None):
     all_accesses = db.query(Access).all()
+    role = db.query(Role).filter(Role.id == role_id).first()
     access_dict = {}
 
     for access in all_accesses:
-        if access_id == access.id:
-            access.has_access = True
-
-        access_dict[access.name] = access.has_access
-        access.has_access = False
+        if role_id is None:
+            access_dict[access.name] = False
+        elif access_id == access.id:
+            access_dict[access.name] = True
+        elif access.name not in role.role_accesses:
+            access_dict[access.name] = False
+        else:
+            access_dict[access.name] = role.role_accesses[access.name]
 
     return access_dict
 
@@ -35,7 +39,7 @@ def get_roles(db: Session):
 
 
 def create_role(db: Session, role: RoleCreate):
-    db_role = Role(name=role.name, role_accesses=generate_access_dict(db, None))
+    db_role = Role(name=role.name, role_accesses=generate_access_dict(db, None, None))
     db.add(db_role)
     db.commit()
     db.refresh(db_role)
@@ -78,7 +82,7 @@ def add_access_to_role(db: Session, role_id: int, access_id: int):
     if not access:
         raise ValueError("Доступ не найден")
 
-    role.role_accesses = generate_access_dict(db, access_id)
+    role.role_accesses = generate_access_dict(db, role_id, access_id)
     db.add(role)
     db.commit()
     db.refresh(role)
