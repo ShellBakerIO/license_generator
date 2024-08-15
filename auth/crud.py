@@ -1,4 +1,6 @@
 from sqlalchemy.orm import Session
+from sqlalchemy.orm.attributes import flag_modified
+
 from models import User, Role, Access
 from schemas import UserCreate, RoleCreate, AccessCreate
 
@@ -11,12 +13,10 @@ def generate_access_dict(db: Session, role_id: int | None = None, access_id: int
     for access in all_accesses:
         if access_id == access.id:
             access_dict[access.name] = has_access
-        elif role_id is None:
-            access_dict[access.name] = False
-        elif access.name not in role.role_accesses:
-            access_dict[access.name] = False
-        else:
+        elif access.name in role.role_accesses:
             access_dict[access.name] = role.role_accesses[access.name]
+        else:
+            access_dict[access.name] = False
 
     return access_dict
 
@@ -35,28 +35,37 @@ def create_user(db: Session, user: UserCreate):
 
 def get_roles(db: Session):
     roles = db.query(Role).all()
-    for role in roles:
-        role.role_accesses = generate_access_dict(db)
     return roles
 
 
 def create_role(db: Session, role: RoleCreate):
-    db_role = Role(name=role.name, role_accesses=generate_access_dict(db, None, None))
+    db_role = Role(name=role.name, role_accesses=generate_access_dict(db, role_id=None))
     db.add(db_role)
     db.commit()
     db.refresh(db_role)
     return db_role
 
 
-def add_role_to_user(db: Session, user_id: int, role_id: int):
+def add_role_to_user(db: Session, user_id: int, role_id: int, added: bool):
     user = db.query(User).filter(User.id == user_id).first()
     role = db.query(Role).filter(Role.id == role_id).first()
+
     if not user:
         raise ValueError(f"Пользователя с ID {user_id} не существует")
     if not role:
         raise ValueError(f"Роли с ID {role_id} не существует")
 
-    user.role = role.name
+    if user.roles is None:
+        user.roles = []
+
+    if added:
+        if role.name not in user.roles:
+            user.roles.append(str(role.name))
+    else:
+        if role.name in user.roles:
+            user.roles.remove(str(role.name))
+
+    flag_modified(user, "roles")
     db.commit()
     db.refresh(user)
 
@@ -85,7 +94,8 @@ def edit_access_for_role(db: Session, role_id: int, access_id: int, has_access: 
         raise ValueError("Доступ не найден")
 
     role.role_accesses = generate_access_dict(db, role_id, access_id, has_access)
-    db.add(role)
+
+    flag_modified(role, "role_accesses")
     db.commit()
     db.refresh(role)
 

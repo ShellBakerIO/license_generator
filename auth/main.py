@@ -154,9 +154,9 @@ def create_role(role: RoleCreate, db: Session = Depends(get_db), current_user: d
 
 
 @app.patch("/users/{user_id}/", response_model=User)
-def add_role_to_user(user_id: int, role_id: int, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+def add_role_to_user(user_id: int, role_id: int, added: bool, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     try:
-        user = crud.add_role_to_user(db=db, user_id=user_id, role_id=role_id)
+        user = crud.add_role_to_user(db=db, user_id=user_id, role_id=role_id, added=added)
         logger.info(f"Роль с ID {role_id} добавлена пользователю с ID {user_id}")
         return user
     except ValueError as e:
