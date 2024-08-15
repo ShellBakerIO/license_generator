@@ -11,7 +11,6 @@ class AccessCreate(AccessBase):
 
 class Access(AccessBase):
     id: int
-    has_access: bool
 
     class Config:
         orm_mode = True

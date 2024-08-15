@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Table, Boolean, JSON
+from sqlalchemy import Column, Integer, String, ForeignKey, Table, JSON
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, relationship, sessionmaker
 
@@ -41,7 +41,6 @@ class Access(Base):
     __tablename__ = 'accesses'
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True)
-    has_access = Column(Boolean, default=False)
     roles = relationship('Role', secondary='role_accesses', back_populates='accesses')
 
 
