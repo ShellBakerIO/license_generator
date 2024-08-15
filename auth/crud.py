@@ -3,16 +3,16 @@ from models import User, Role, Access
 from schemas import UserCreate, RoleCreate, AccessCreate
 
 
-def generate_access_dict(db: Session, role_id: int | None = None, access_id: int | None = None):
+def generate_access_dict(db: Session, role_id: int | None = None, access_id: int | None = None, has_access: bool = False):
     all_accesses = db.query(Access).all()
     role = db.query(Role).filter(Role.id == role_id).first()
     access_dict = {}
 
     for access in all_accesses:
-        if role_id is None:
+        if access_id == access.id:
+            access_dict[access.name] = has_access
+        elif role_id is None:
             access_dict[access.name] = False
-        elif access_id == access.id:
-            access_dict[access.name] = True
         elif access.name not in role.role_accesses:
             access_dict[access.name] = False
         else:
@@ -35,6 +35,8 @@ def create_user(db: Session, user: UserCreate):
 
 def get_roles(db: Session):
     roles = db.query(Role).all()
+    for role in roles:
+        role.role_accesses = generate_access_dict(db)
     return roles
 
 
@@ -73,7 +75,7 @@ def create_access(db: Session, access: AccessCreate):
     return db_access
 
 
-def add_access_to_role(db: Session, role_id: int, access_id: int):
+def edit_access_for_role(db: Session, role_id: int, access_id: int, has_access: bool):
     role = db.query(Role).filter(Role.id == role_id).first()
     access = db.query(Access).filter(Access.id == access_id).first()
 
@@ -82,7 +84,7 @@ def add_access_to_role(db: Session, role_id: int, access_id: int):
     if not access:
         raise ValueError("Доступ не найден")
 
-    role.role_accesses = generate_access_dict(db, role_id, access_id)
+    role.role_accesses = generate_access_dict(db, role_id, access_id, has_access)
     db.add(role)
     db.commit()
     db.refresh(role)
