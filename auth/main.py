@@ -178,9 +178,9 @@ def create_access(access: AccessCreate, db: Session = Depends(get_db), current_u
 
 
 @app.patch("/roles/{role_id}/", response_model=Role)
-def add_access_to_role(role_id: int, access_id: int, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+def edit_access_for_role(role_id: int, access_id: int, has_access: bool, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     try:
-        role = crud.add_access_to_role(db=db, role_id=role_id, access_id=access_id)
+        role = crud.edit_access_for_role(db=db, role_id=role_id, access_id=access_id, has_access=has_access)
         logger.info(f"Доступ с ID {access_id} добавлен к роли с ID {role_id}")
         return role
     except ValueError as e:
