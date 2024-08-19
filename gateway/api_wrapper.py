@@ -1,25 +1,15 @@
 from functools import wraps
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import aiohttp
-from fastapi import HTTPException, Request, Response, status
+from fastapi import Request, Response
 from fastapi.routing import APIRouter
-
-import gateway_auth
+from aiohttp.formdata import FormData
 
 router = APIRouter()
 
 
-def gateway_router(method, path: str, payload_key: str, service_url: str, response_model: Optional[Any] | None = None):
-    """
-    Обёртка для валидации данных
-
-    :param method: Вызываемый объект (функция) реализующая метод http-запроса.
-    :param path: Адрес эндпоинта.
-    :param payload_key:
-    :param service_url: Адрес сервисса.
-    :param response_model: Модель данных для преобразования ответа.
-    """
+def gateway_router(method, path: str, payload_key: str, service_url: str, response_model: Optional[Any] = None):
     app_method = method(path, response_model=response_model)
 
     def wrapper(endpoint):
@@ -31,24 +21,21 @@ def gateway_router(method, path: str, payload_key: str, service_url: str, respon
             request_method = scope['method'].lower()
             path = scope['path']
             payload = kwargs.get(payload_key)
-            data = payload.__dict__ if payload else {}
-            """if isinstance(kwargs, dict) and path != '/token':
-                data = payload.__dict__ if payload else {}
-            else:
-                data = kwargs"""
 
-            if path == '/token':
-                headers = gateway_auth.login(form_data=data)
+            print(1, kwargs)
+            print(2, payload)
+            print(3, payload_key)
+
+            if payload_key == 'form_data':
+                data = FormData()
+                data.add_field('username', payload.username)
+                data.add_field('password', payload.password)
+            else:
+                data = payload.__dict__ if payload else {}
+
+            print(4, data)
 
             url = f'{service_url}{path}'
-
-            print(1, request_method)
-            print(2, path)
-            print(3, payload)
-            print(4, data)
-            print(5, headers)
-            print(6, kwargs)
-            print(7, url)
 
             response_data = await send_request(
                 url=url,
@@ -59,18 +46,25 @@ def gateway_router(method, path: str, payload_key: str, service_url: str, respon
 
             return response_data
 
+        return decorator
+
     return wrapper
 
 
-async def send_request(url: str, method: str, data: dict = None, headers: dict = None):
-    if not data:
-        data = {}
+async def send_request(url: str, method: str, data: Union[dict, FormData], headers: dict = None):
+    if headers is None:
+        headers = {}
 
     async with aiohttp.ClientSession() as session:
         request = getattr(session, method)
-        async with request(url=url, json=data, headers=headers) as response:
-            print(8, data)
-            print(9, url)
-            data = await response.json()
-            print(10, data)
-            return data
+
+        if isinstance(data, dict):
+            async with request(url=url, json=data, headers=headers) as response:
+                print(5, data)
+                data = await response.json()
+        else:
+            async with request(url=url, data=data, headers=headers) as response:
+                print(6, data)
+                data = await response.json()
+
+        return data
