@@ -10,7 +10,7 @@ import gateway_auth
 router = APIRouter()
 
 
-def gateway_router(method, path: str, payload_key: str, service_url: str, response_model: Optional[Any] = None):
+def gateway_router(method, path: str, payload_key: str, service_url: str, response_model: Optional[Any] | None = None):
     """
     Обёртка для валидации данных
 
@@ -68,9 +68,9 @@ async def send_request(url: str, method: str, data: dict = None, headers: dict =
 
     async with aiohttp.ClientSession() as session:
         request = getattr(session, method)
-        async with request(url=url, data=data, headers=headers) as response:
-            print(data)
-            print(url)
-            print(data)
+        async with request(url=url, json=data, headers=headers) as response:
+            print(8, data)
+            print(9, url)
             data = await response.json()
+            print(10, data)
             return data

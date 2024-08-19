@@ -3,12 +3,11 @@ from typing import Annotated, List
 from fastapi import Depends, FastAPI, File, UploadFile, Request, Response
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
-from dto.user import UserCreate, RoleCreate, AccessCreate
+from dto.user import UserCreate, RoleCreate, AccessCreate, Access
 from dto.license import LicensesInfo
 from starlette.middleware.cors import CORSMiddleware
 
 from api_wrapper import gateway_router
-import dto
 
 app = FastAPI()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token")
@@ -182,7 +181,7 @@ def read_accesses(
                 service_url=os.environ.get('AUTH_SERVICE_URL'),
                 )
 async def create_access(
-    access: str,
+    access: AccessCreate,
 
     request: Request,
     response: Response,

@@ -76,8 +76,8 @@ def get_accesses(db: Session):
     return db.query(Access).all()
 
 
-def create_access(db: Session, access: str):
-    db_access = Access(name=access)
+def create_access(db: Session, access: AccessCreate):
+    db_access = Access(name=access.name)
     db.add(db_access)
     db.commit()
     db.refresh(db_access)
