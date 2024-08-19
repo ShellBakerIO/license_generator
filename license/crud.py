@@ -35,7 +35,7 @@ def add_license_in_db(db, lic, machine_digest_file_name, lic_file_name):
 
 
 def save_machine_digest_file(machine_digest_file, machine_digest_file_name):
-    path = f"license/files/machine_digest_files/{machine_digest_file_name}"
+    path = f"files/machine_digest_files/{machine_digest_file_name}"
     with open(path, "wb+") as buffer:
         shutil.copyfileobj(machine_digest_file.file, buffer)
 
@@ -44,7 +44,7 @@ def run_script_to_save_files(lic, machine_digest_file_name, lic_file_name):
     subprocess.run(
         [
             "python",
-            "license/script.py",
+            "script.py",
             f"{lic.company_name}",
             f"{lic.product_name}",
             f"{lic.license_users_count}",
@@ -53,4 +53,3 @@ def run_script_to_save_files(lic, machine_digest_file_name, lic_file_name):
             f"{lic_file_name}",
         ],
     )
-

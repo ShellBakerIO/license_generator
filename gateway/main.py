@@ -1,5 +1,6 @@
-from typing import Annotated
-from fastapi import Depends, FastAPI, APIRouter, File, UploadFile, Request, Response
+import os
+from typing import Annotated, List
+from fastapi import Depends, FastAPI, File, UploadFile, Request, Response
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
 from dto.user import UserCreate, RoleCreate, AccessCreate
@@ -7,11 +8,10 @@ from dto.license import LicensesInfo
 from starlette.middleware.cors import CORSMiddleware
 
 from api_wrapper import gateway_router
-
+import dto
 
 app = FastAPI()
-api_router = APIRouter()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token")
 
 app.add_middleware(
     CORSMiddleware,
@@ -22,8 +22,11 @@ app.add_middleware(
 )
 
 
-@gateway_router(api_router.post, "/token")
-async def get_token(
+@gateway_router(app.post,
+                "/token",
+                payload_key='form_data',
+                service_url=os.environ.get('AUTH_SERVICE_URL'))
+async def login(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     request: Request,
     response: Response,
@@ -31,15 +34,23 @@ async def get_token(
     pass
 
 
-@gateway_router(api_router.get, "/users/me")
+@gateway_router(app.get,
+                "/users/me",
+                payload_key=None,
+                service_url=os.environ.get('AUTH_SERVICE_URL'))
 async def read_users_me(
-    token: Annotated[str, Depends(oauth2_scheme)], request: Request, response: Response
+    token: Annotated[str, Depends(oauth2_scheme)],
+    request: Request,
+    response: Response,
 ):
     pass
 
 
-@gateway_router(api_router.post, "/generate_license")
-def generate_license(
+@gateway_router(app.post,
+                "/generate_license",
+                payload_key=None,
+                service_url=os.environ.get('LICENSE_SERVICE_URL'))
+async def generate_license(
     current_user: Annotated[str, Depends(oauth2_scheme)],
     request: Request,
     response: Response,
@@ -49,17 +60,23 @@ def generate_license(
     pass
 
 
-@gateway_router(api_router.get, "/all_licenses")
-def get_all_licenses(
-    current_user: Annotated[str, Depends(oauth2_scheme)],
+@gateway_router(app.get,
+                "/all_licenses",
+                payload_key=None,
+                service_url=os.environ.get('LICENSE_SERVICE_URL'))
+async def get_all_licenses(
+
     request: Request,
     response: Response,
 ):
     pass
 
 
-@gateway_router(api_router.get, "/license/{id}")
-def find_license(
+@gateway_router(app.get,
+                "/license/{id}",
+                payload_key=None,
+                service_url=os.environ.get('LICENSE_SERVICE_URL'))
+async def find_license(
     id: int,
     current_user: Annotated[str, Depends(oauth2_scheme)],
     request: Request,
@@ -68,7 +85,10 @@ def find_license(
     pass
 
 
-@gateway_router(api_router.get, "/machine_digest_file/{id}")
+@gateway_router(app.get,
+                "/machine_digest_file/{id}",
+                payload_key=None,
+                service_url=os.environ.get('LICENSE_SERVICE_URL'))
 def find_machine_digest(
     id: int,
     current_user: Annotated[str, Depends(oauth2_scheme)],
@@ -78,61 +98,109 @@ def find_machine_digest(
     pass
 
 
-@gateway_router(api_router.get, "/users/")
+@gateway_router(app.get,
+                "/users/",
+                payload_key=None,
+                service_url=os.environ.get('AUTH_SERVICE_URL'))
 def read_users(
+    current_user: Annotated[str, Depends(oauth2_scheme)],
     request: Request,
     response: Response,
-    skip: int = 0,
-    limit: int = 10,
 ):
     pass
 
 
-@gateway_router(api_router.post, "/users/")
+@gateway_router(app.post,
+                "/users/",
+                payload_key='user',
+                service_url=os.environ.get('AUTH_SERVICE_URL'))
 def create_user(
-    request: Request,
-    response: Response,
     user: UserCreate,
+    current_user: Annotated[str, Depends(oauth2_scheme)],
+    request: Request,
+    response: Response,
 ):
     pass
 
 
-@gateway_router(api_router.get, "/roles/")
+@gateway_router(app.get,
+                "/roles/",
+                payload_key=None,
+                service_url=os.environ.get('AUTH_SERVICE_URL'))
 def read_roles(
+    current_user: Annotated[str, Depends(oauth2_scheme)],
     request: Request,
     response: Response,
-    skip: int = 0,
-    limit: int = 10,
 ):
     pass
 
 
-@gateway_router(api_router.post, "/roles/")
+@gateway_router(app.post,
+                "/roles/",
+                payload_key='role',
+                service_url=os.environ.get('AUTH_SERVICE_URL'))
 def create_role(
-    request: Request,
-    response: Response,
     role: RoleCreate,
+
+    request: Request,
+    response: Response,
 ):
     pass
 
 
-@gateway_router(api_router.get, "/accesses/")
+@gateway_router(app.patch,
+                "/users/{user_id}/",
+                payload_key=None,
+                service_url=os.environ.get('AUTH_SERVICE_URL'))
+async def add_role_to_user(
+    user_id: int,
+    role_id: int,
+    added: bool,
+    current_user: Annotated[str, Depends(oauth2_scheme)],
+    request: Request,
+    response: Response,
+):
+    pass
+
+
+@gateway_router(app.get,
+                "/accesses/",
+                payload_key=None,
+                service_url=os.environ.get('AUTH_SERVICE_URL'),
+                )
 def read_accesses(
+    current_user: Annotated[str, Depends(oauth2_scheme)],
     request: Request,
     response: Response,
-    skip: int = 0,
-    limit: int = 10,
 ):
     pass
 
 
-@gateway_router(api_router.post, "/accesses/")
-def create_access(
+@gateway_router(app.post,
+                "/accesses/",
+                payload_key='access',
+                service_url=os.environ.get('AUTH_SERVICE_URL'),
+                )
+async def create_access(
+    access: str,
+
     request: Request,
     response: Response,
-    access: AccessCreate,
 ):
     pass
 
 
-app.include_router(api_router)
+@gateway_router(app.patch, "/roles/{role_id}/",
+                payload_key=None,
+                service_url=os.environ.get('AUTH_SERVICE_URL')
+
+                )
+async def edit_access_for_role(
+    role_id: int,
+    access_id: int,
+    has_access: bool,
+
+    request: Request,
+    response: Response,
+):
+    pass

@@ -1,6 +1,5 @@
 from datetime import datetime
 
-import httpx
 from fastapi import FastAPI, UploadFile, File, Depends, HTTPException, status
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -49,10 +48,19 @@ def generate_license(
     crud.save_machine_digest_file(machine_digest_file, machine_digest_file_name)
     crud.run_script_to_save_files(lic, machine_digest_file_name, lic_file_name)
 
-    license_path = f"license/files/licenses/{lic_file_name}.txt"
+    path = f"files/machine_digest_files/{machine_digest_file_name}"
+    product_key = open(path, "r", encoding="utf-8").read()
+    license_path = f"files/licenses/{lic_file_name}.txt"
+    with open(license_path, "w", encoding="utf-8") as f:
+        f.write(f"Компания: {lic.company_name}\n")
+        f.write(f"ПО: {lic.product_name}\n")
+        f.write(f"Количество лицензий: {lic.license_users_count}\n")
+        f.write(f"Время действия: {lic.exp_time}\n")
+        f.write(f"Ключ продукта: {product_key}")
+        f.close()
     logger.bind(lic_file_name=lic_file_name).info("Создана лицензия")
 
-    return FileResponse(license_path, filename=f"{lic_file_name}.txt")
+    return FileResponse(license_path, filename=f"{lic_file_name}")
 
 
 @app.get("/all_licenses")
@@ -77,11 +85,11 @@ def find_license(id: int, db: Session = Depends(get_db)):
     _logger = logger.bind(id=id)
 
     if license is not None:
-        license_path = f"license/files/licenses/{license.lic_file_name}"
-        _logger.info(f"Выведена информация о лицензии с id: {id}")
+        license_path = f"files/licenses/{license.lic_file_name}"
+        _logger.info("Выведена информация о лицензии с id")
         return FileResponse(license_path, filename=f"{license.lic_file_name}")
     else:
-        _logger.error(f"Попытка найти информацию о несуществующей лицензии с id: {id}")
+        _logger.error("Попытка найти информацию о несуществующей лицензии с id")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Лицензия с id-{id} не найдена",
@@ -92,21 +100,21 @@ def find_license(id: int, db: Session = Depends(get_db)):
 def find_machine_digest(id: int, db: Session = Depends(get_db)):
     license = db.get(Licenses, id)
     _logger = logger.bind(id=id)
-    digest_path = f"license/files/machine_digest_files/{license.machine_digest_file}"
 
     if license is not None:
-        _logger.info("Выведена информацию о машинном файле с id")
-        return FileResponse(digest_path, filename=f"{license.lic_file_name}")
+        digest_path = f"files/machine_digest_files/{license.machine_digest_file}"
+        _logger.info("Выведена информация о машинном файле с id")
+        return FileResponse(digest_path, filename=f"{license.machine_digest_file}")
     else:
-        _logger.error(f"Попытка найти информацию о несуществующем машинном файле с id")
+        _logger.error("Попытка найти информацию о несуществующем машинном файле с id")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Лицензия с id-{id} не найдена",
+            detail=f"Машинный файл с id-{id} не найден",
         )
 
 
 app.mount(
-    "/license/files/licenses",
+    "/licenses",
     StaticFiles(directory="files/licenses"),
     name="licenses",
 )

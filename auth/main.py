@@ -54,7 +54,7 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: Se
     try:
         decoded_token = jwt.decode(token, os.getenv("SECRET_KEY"), algorithms=["HS256"])
 
-        if decoded_token["exp"] < datetime.utcnow().timestamp():
+        if decoded_token["exp"] >= datetime.utcnow().timestamp():
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Token expired or invalid",
@@ -91,7 +91,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 
         return {
             "access_token": access_token,
-            "token_type": "bearer",
+            "token_type": "Bearer",
         }
 
     else:
@@ -104,7 +104,7 @@ async def read_users_me(token: str = Depends(oauth2_scheme), db: Session = Depen
     decoded_token = jwt.decode(token, os.getenv("SECRET_KEY"), algorithms=["HS256"])
     _logger = logger.bind(username=decoded_token["username"])
 
-    if decoded_token["exp"] < datetime.utcnow().timestamp():
+    if decoded_token["exp"] >= datetime.utcnow().timestamp():
         _logger.info("Токен пользователя валиден")
         return decoded_token["username"]
     else:
@@ -128,33 +128,33 @@ async def verify_token(token: str = Depends(oauth2_scheme), db: Session = Depend
 
 
 @app.get("/users/", response_model=List[User])
-def read_users(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+def read_users(db: Session = Depends(get_db)):
     users = crud.get_users(db)
     logger.info("Выведен список пользователей")
     return users
 
 
 @app.post("/users/", response_model=User)
-def create_user(user: UserCreate, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+def create_user(user: UserCreate, db: Session = Depends(get_db)):
     logger.info("Добавлен новый пользователь")
     return crud.create_user(db=db, user=user)
 
 
 @app.get("/roles/", response_model=List[Role])
-def read_roles(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+def read_roles(db: Session = Depends(get_db)):
     roles = crud.get_roles(db)
     logger.info("Выведен список ролей")
     return roles
 
 
 @app.post("/roles/", response_model=Role)
-def create_role(role: RoleCreate, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+def create_role(role: RoleCreate, db: Session = Depends(get_db)):
     logger.info("Добавлена новая роль")
     return crud.create_role(db=db, role=role)
 
 
 @app.patch("/users/{user_id}/", response_model=User)
-def add_role_to_user(user_id: int, role_id: int, added: bool, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+def add_role_to_user(user_id: int, role_id: int, added: bool, db: Session = Depends(get_db)):
     try:
         user = crud.add_role_to_user(db=db, user_id=user_id, role_id=role_id, added=added)
         logger.info(f"Роль с ID {role_id} добавлена пользователю с ID {user_id}")
@@ -165,20 +165,20 @@ def add_role_to_user(user_id: int, role_id: int, added: bool, db: Session = Depe
 
 
 @app.get("/accesses/", response_model=List[Access])
-def read_accesses(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+def read_accesses(db: Session = Depends(get_db)):
     accesses = crud.get_accesses(db)
     logger.info("Выведен список доступов")
     return accesses
 
 
 @app.post("/accesses/", response_model=Access)
-def create_access(access: AccessCreate, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+def create_access(access: str, db: Session = Depends(get_db)):
     logger.info("Добавлен новый доступ")
     return crud.create_access(db=db, access=access)
 
 
 @app.patch("/roles/{role_id}/", response_model=Role)
-def edit_access_for_role(role_id: int, access_id: int, has_access: bool, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+def edit_access_for_role(role_id: int, access_id: int, has_access: bool, db: Session = Depends(get_db)):
     try:
         role = crud.edit_access_for_role(db=db, role_id=role_id, access_id=access_id, has_access=has_access)
         logger.info(f"Доступ с ID {access_id} добавлен к роли с ID {role_id}")
