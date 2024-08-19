@@ -172,7 +172,7 @@ def read_accesses(db: Session = Depends(get_db)):
 
 
 @app.post("/accesses/", response_model=Access)
-def create_access(access: str, db: Session = Depends(get_db)):
+def create_access(access: AccessCreate, db: Session = Depends(get_db)):
     logger.info("Добавлен новый доступ")
     return crud.create_access(db=db, access=access)
 
