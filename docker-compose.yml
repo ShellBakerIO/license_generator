@@ -12,8 +12,8 @@ services:
     networks:
       - default
     depends_on:
-      - 'auth'
-      - 'license'
+      - auth
+      - license
 
   auth:
     build:
@@ -21,8 +21,8 @@ services:
       dockerfile: ./Dockerfile
     env_file:
       - auth/.env
-    container_name: authentication_service
-    command: sh -c "alembic upgrade head && uvicorn main:app --reload --host 0.0.0.0 "
+    container_name: auth
+    command: sh -c "alembic upgrade head && uvicorn main:app --reload --host 0.0.0.0"
     networks:
       - default
     depends_on:
@@ -30,7 +30,7 @@ services:
     ports:
       - '8030:8000'
     volumes:
-      - ./logs:/auth/logs
+      - ./auth/logs:/auth/logs
 
   users_db:
     image: postgres:15
@@ -54,7 +54,7 @@ services:
       dockerfile: ./Dockerfile
     env_file:
       - license/.env
-    container_name: license_service
+    container_name: license
     command: sh -c "alembic upgrade head && uvicorn main:app --reload --host 0.0.0.0"
     networks:
       - default
@@ -63,7 +63,9 @@ services:
     ports:
       - '8060:8000'
     volumes:
-      - ./logs:/license/logs
+      - ./license/logs:/license/logs
+      - ./license/files/licenses:/license/files/licenses
+      - ./license/files/machine_digest_files:/license/files/machine_digest_files
 
   license_db:
     image: postgres:15
@@ -78,13 +80,13 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
       - POSTGRES_USER=${POSTGRES_USER?Variable not set}
       - POSTGRES_DB=${POSTGRES_DB?Variable not set}
-      # - PGPORT=${DB_PORT}
     volumes:
       - licenses_data:/var/lib/postgresql/data
 
 volumes:
   users_data:
   licenses_data:
+  license_files:
 
 networks:
   default:

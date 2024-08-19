@@ -27,7 +27,7 @@ def test_main():
         response = client.post("/generate_license", data={
             "company_name": "Test Company",
             "product_name": "Test Product",
-            "lic_num": 999,
+            "license_users_count": 999,
             "exp_time": "11-11-1111",
             "lic_file_name": "Test License"},
             files={"machine_digest_file": open(machine_digest_file, 'rb')},
