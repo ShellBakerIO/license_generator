@@ -5,7 +5,7 @@ from typing import List, Annotated
 import jwt
 from fastapi import FastAPI, Depends
 from fastapi import HTTPException, status, APIRouter
-from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from loguru import logger
 from sqlalchemy.orm import Session
 from starlette.middleware.cors import CORSMiddleware
@@ -13,7 +13,7 @@ from starlette.middleware.cors import CORSMiddleware
 import crud
 from ldap import authenticate
 from models import SessionLocal, engine, Base
-from schemas import User, UserCreate, Role, RoleCreate, Access, AccessCreate
+from schemas import User, UserCreate, Role, RoleCreate, Access, AccessCreate, Access_to_Role, Role_to_User
 
 app = FastAPI(title="AdminService")
 router = APIRouter()
@@ -78,7 +78,6 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: Se
 
 @app.post("/token")
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
-
     if authenticate(form_data.username, form_data.password):
         logger.bind(user=form_data.username).info("В систему вошел пользователь")
 
@@ -154,10 +153,13 @@ def create_role(role: RoleCreate, db: Session = Depends(get_db)):
 
 
 @app.patch("/users/{user_id}/", response_model=User)
-def add_role_to_user(user_id: int, role_id: int, added: bool, db: Session = Depends(get_db)):
+def add_role_to_user(role_to_user: Role_to_User, db: Session = Depends(get_db)):
     try:
-        user = crud.add_role_to_user(db=db, user_id=user_id, role_id=role_id, added=added)
-        logger.info(f"Роль с ID {role_id} добавлена пользователю с ID {user_id}")
+        user = crud.add_role_to_user(db=db,
+                                     user_id=role_to_user.user_id,
+                                     role_id=role_to_user.role_id,
+                                     added=role_to_user.added)
+        logger.info(f"Роль с ID {role_to_user.role_id} добавлена пользователю с ID {role_to_user.user_id}")
         return user
     except ValueError as e:
         logger.error(str(e))
@@ -178,10 +180,13 @@ def create_access(access: AccessCreate, db: Session = Depends(get_db)):
 
 
 @app.patch("/roles/{role_id}/", response_model=Role)
-def edit_access_for_role(role_id: int, access_id: int, has_access: bool, db: Session = Depends(get_db)):
+def edit_access_for_role(access_to_role: Access_to_Role, db: Session = Depends(get_db)):
     try:
-        role = crud.edit_access_for_role(db=db, role_id=role_id, access_id=access_id, has_access=has_access)
-        logger.info(f"Доступ с ID {access_id} добавлен к роли с ID {role_id}")
+        role = crud.edit_access_for_role(db=db,
+                                         role_id=access_to_role.role_id,
+                                         access_id=access_to_role.access_id,
+                                         has_access=access_to_role.has_access)
+        logger.info(f"Доступ с ID {access_to_role.access_id} добавлен к роли с ID {access_to_role.role_id}")
         return role
     except ValueError as e:
         logger.error(str(e))

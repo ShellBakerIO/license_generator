@@ -1,9 +1,9 @@
 import os
-from typing import Annotated, List
+from typing import Annotated
 from fastapi import Depends, FastAPI, File, UploadFile, Request, Response
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
-from dto.user import UserCreate, RoleCreate, AccessCreate, Access
+from dto.user import UserCreate, RoleCreate, AccessCreate, Access_to_Role, Role_to_User
 from dto.license import LicensesInfo
 from starlette.middleware.cors import CORSMiddleware
 
@@ -47,7 +47,7 @@ async def read_users_me(
 
 @gateway_router(app.post,
                 "/generate_license",
-                payload_key=None,
+                payload_key='generate_license',
                 service_url=os.environ.get('LICENSE_SERVICE_URL'))
 async def generate_license(
     current_user: Annotated[str, Depends(oauth2_scheme)],
@@ -64,7 +64,7 @@ async def generate_license(
                 payload_key=None,
                 service_url=os.environ.get('LICENSE_SERVICE_URL'))
 async def get_all_licenses(
-
+    current_user: Annotated[str, Depends(oauth2_scheme)],
     request: Request,
     response: Response,
 ):
@@ -140,7 +140,7 @@ def read_roles(
                 service_url=os.environ.get('AUTH_SERVICE_URL'))
 def create_role(
     role: RoleCreate,
-
+    current_user: Annotated[str, Depends(oauth2_scheme)],
     request: Request,
     response: Response,
 ):
@@ -149,12 +149,10 @@ def create_role(
 
 @gateway_router(app.patch,
                 "/users/{user_id}/",
-                payload_key=None,
+                payload_key='role_to_user',
                 service_url=os.environ.get('AUTH_SERVICE_URL'))
 async def add_role_to_user(
-    user_id: int,
-    role_id: int,
-    added: bool,
+    role_to_user: Role_to_User,
     current_user: Annotated[str, Depends(oauth2_scheme)],
     request: Request,
     response: Response,
@@ -182,7 +180,7 @@ def read_accesses(
                 )
 async def create_access(
     access: AccessCreate,
-
+    current_user: Annotated[str, Depends(oauth2_scheme)],
     request: Request,
     response: Response,
 ):
@@ -190,15 +188,13 @@ async def create_access(
 
 
 @gateway_router(app.patch, "/roles/{role_id}/",
-                payload_key=None,
+                payload_key='access_to_role',
                 service_url=os.environ.get('AUTH_SERVICE_URL')
 
                 )
 async def edit_access_for_role(
-    role_id: int,
-    access_id: int,
-    has_access: bool,
-
+    access_to_role: Access_to_Role,
+    current_user: Annotated[str, Depends(oauth2_scheme)],
     request: Request,
     response: Response,
 ):
