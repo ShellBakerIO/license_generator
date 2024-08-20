@@ -2,6 +2,7 @@ from ldap3 import Server, Connection, SUBTREE, ALL
 from dotenv import load_dotenv
 import os
 
+from models import Role, Access
 
 load_dotenv()
 
@@ -29,9 +30,12 @@ def is_valid_credentials(conn, user_password):
         return False
 
 
-def authenticate(user_name, user_password):
+def authenticate(user_name, user_password, db):
     if user_name == "admin" and user_password == "admin":
-        return True
+        accesses = db.query(Access).all()
+        accesses = [access.name for access in accesses]
+        print(accesses)
+        return True, accesses, "Admin"
 
     try:
         conn = create_connection('CN=Насибов Фариз,OU=External,DC=advengineering,DC=ru', os.getenv('LDAP_PASSWORD'))
@@ -43,7 +47,9 @@ def authenticate(user_name, user_password):
                     search_scope=SUBTREE,
                     attributes='userPrincipalName')
 
-        return is_valid_credentials(conn, user_password)
+        accesses = db.query(Role).filter(Role.name == "Base").first().role_accesses
+
+        return is_valid_credentials(conn, user_password), accesses, "Base"
 
     except Exception as e:
         print(f"An error occurred: {e}")

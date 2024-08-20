@@ -13,6 +13,8 @@ def generate_access_dict(db: Session, role_id: int | None = None, access_id: int
     for access in all_accesses:
         if access_id == access.id:
             access_dict[access.name] = has_access
+        elif role_id is None:
+            access_dict[access.name] = False
         elif access.name in role.role_accesses:
             access_dict[access.name] = role.role_accesses[access.name]
         else:
