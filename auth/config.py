@@ -15,4 +15,9 @@ DB_NAME_TEST = os.environ.get("DB_NAME_TEST")
 DB_USER_TEST = os.environ.get("DB_USER_TEST")
 DB_PASS_TEST = os.environ.get("DB_PASS_TEST")
 
+READ_LICENSE = os.environ.get("READ_LICENSE")
+CREATE_LICENSE = os.environ.get("CREATE_LICENSE")
+RETRIEVE_FILE = os.environ.get("RETRIEVE_FILE")
+USER_ROLE_MANAGEMENT = os.environ.get("USER_ROLE_MANAGEMENT")
+
 LDAP_PASSWORD = os.environ.get("LDAP_PASSWORD")

@@ -12,7 +12,7 @@ from starlette.middleware.cors import CORSMiddleware
 
 import crud
 from ldap import authenticate
-from models import SessionLocal, engine, Base, Role, Access, User
+from models import SessionLocal, engine, Base, Access, User, Role
 import schemas
 
 app = FastAPI(title="AdminService")
@@ -32,15 +32,17 @@ app.add_middleware(
 
 def get_db():
     db = SessionLocal()
-    if db.query(Role).filter(Role.name == "Base").first() is None:
-        first_base_access = Access(name='Read_All_Licenses')
-        second_base_accesses = Access(name='Read_Users_Me')
-        base_role = Role(name='Base', role_accesses={first_base_access.name: True, second_base_accesses.name: True})
-        db.add_all([first_base_access, second_base_accesses, base_role])
+    if db.query(Access).filter(Access.name == "READ_LICENSE").first() is None:
+        read_license = Access(name=os.getenv("READ_LICENSE"))
+        create_license = Access(name=os.getenv("CREATE_LICENSE"))
+        retrieve_file = Access(name=os.getenv("RETRIEVE_FILE"))
+        user_role_management = Access(name=os.getenv("USER_ROLE_MANAGEMENT"))
+        db.add_all([read_license, create_license, retrieve_file, user_role_management])
         db.commit()
-        db.refresh(first_base_access)
-        db.refresh(second_base_accesses)
-        db.refresh(base_role)
+        db.refresh(read_license)
+        db.refresh(create_license)
+        db.refresh(retrieve_file)
+        db.refresh(user_role_management)
     try:
         yield db
     finally:
@@ -55,6 +57,7 @@ async def startup():
 @app.post("/token")
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     auth, accesses, role = authenticate(form_data.username, form_data.password, db)
+
     if auth:
         logger.bind(user=form_data.username).info("В систему вошел пользователь")
         claims = accesses
@@ -67,17 +70,16 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
 
         access_token = jwt.encode(token_data, os.getenv("SECRET_KEY"), algorithm="HS256")
 
-        if db.query(User).filter(User.username == form_data.username).first() is None:
+        if db.query(User).filter(User.username == "admin").first() is None:
             user = User(username=form_data.username, roles=[role])
             db.add(user)
             db.commit()
             db.refresh(user)
-
-        if db.query(Role).filter(Role.name == role).first() is None:
-            new_role = Role(name=role, role_accesses={access: True for access in accesses})
-            db.add(new_role)
+        elif db.query(User).filter(User.username == form_data.username).first() is None:
+            user = User(username=form_data.username, roles=[])
+            db.add(user)
             db.commit()
-            db.refresh(new_role)
+            db.refresh(user)
 
         return {
             "access_token": access_token,
@@ -120,6 +122,15 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     return crud.create_user(db=db, user=user)
 
 
+@app.delete("/users/", response_model=schemas.User)
+def delete_user(user: schemas.UserDelete, db: Session = Depends(get_db)):
+    user = db.get(User, user.id)
+    db.delete(user)
+    db.commit()
+    logger.info("Пользователь удален")
+    return user
+
+
 @app.get("/roles/", response_model=List[schemas.Role])
 def read_roles(db: Session = Depends(get_db)):
     roles = crud.get_roles(db)
@@ -131,6 +142,16 @@ def read_roles(db: Session = Depends(get_db)):
 def create_role(role: schemas.RoleCreate, db: Session = Depends(get_db)):
     logger.info("Добавлена новая роль")
     return crud.create_role(db=db, role=role)
+
+
+@app.delete("/roles/", response_model=schemas.Role)
+def delete_role(role: schemas.RoleDelete, db: Session = Depends(get_db)):
+    role = db.get(Role, role.id)
+    print(role)
+    db.delete(role)
+    db.commit()
+    logger.info("Роль удалена")
+    return role
 
 
 @app.patch("/users/{user_id}/", response_model=schemas.User)
@@ -152,12 +173,6 @@ def read_accesses(db: Session = Depends(get_db)):
     accesses = crud.get_accesses(db)
     logger.info("Выведен список доступов")
     return accesses
-
-
-@app.post("/accesses/", response_model=schemas.Access)
-def create_access(access: schemas.AccessCreate, db: Session = Depends(get_db)):
-    logger.info("Добавлен новый доступ")
-    return crud.create_access(db=db, access=access)
 
 
 @app.patch("/roles/{role_id}/", response_model=schemas.Role)

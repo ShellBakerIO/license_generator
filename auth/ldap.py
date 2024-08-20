@@ -34,11 +34,11 @@ def authenticate(user_name, user_password, db):
     if user_name == "admin" and user_password == "admin":
         accesses = db.query(Access).all()
         accesses = [access.name for access in accesses]
-        print(accesses)
         return True, accesses, "Admin"
 
     try:
-        conn = create_connection('CN=Насибов Фариз,OU=External,DC=advengineering,DC=ru', os.getenv('LDAP_PASSWORD'))
+        conn = create_connection('CN=Насибов Фариз,OU=External,DC=advengineering,DC=ru',
+                                 os.getenv('LDAP_PASSWORD'))
         conn.bind()
 
         search_filter = f'(sAMAccountName={user_name})'
@@ -47,9 +47,7 @@ def authenticate(user_name, user_password, db):
                     search_scope=SUBTREE,
                     attributes='userPrincipalName')
 
-        accesses = db.query(Role).filter(Role.name == "Base").first().role_accesses
-
-        return is_valid_credentials(conn, user_password), accesses, "Base"
+        return is_valid_credentials(conn, user_password), [], None
 
     except Exception as e:
         print(f"An error occurred: {e}")

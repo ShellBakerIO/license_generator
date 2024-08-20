@@ -1,5 +1,4 @@
 from aiohttp.formdata import FormData
-from fastapi.responses import FileResponse
 
 
 def generate_data(kwargs, payload, payload_key):
@@ -23,24 +22,5 @@ def generate_data(kwargs, payload, payload_key):
                        content_type=machine_digest_file.content_type)
     else:
         data = payload.__dict__ if payload else {}
-
-    return data
-
-
-async def extract_response_data(response):
-    content_type = response.headers.get('Content-Type', '')
-    if 'application/json' in content_type:
-        data = await response.json()
-    elif 'text/plain' in content_type or 'application/octet-stream' in content_type:
-        file_name = response.headers.get('Content-Disposition').split("filename=")[1].strip('"')
-        file_content = await response.read()
-
-        temp_file_path = f'/tmp/{file_name}'
-        with open(temp_file_path, 'wb') as f:
-            f.write(file_content)
-
-        return FileResponse(path=temp_file_path, filename=file_name)
-    else:
-        data = await response.read()
 
     return data
