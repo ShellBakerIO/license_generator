@@ -37,6 +37,10 @@ class RoleCreate(RoleBase):
     pass
 
 
+class RoleDelete(BaseModel):
+    id: int
+
+
 class Role(RoleBase):
     id: int
     role_accesses: dict
@@ -51,6 +55,10 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     pass
+
+
+class UserDelete(BaseModel):
+    id: int
 
 
 class User(UserBase):

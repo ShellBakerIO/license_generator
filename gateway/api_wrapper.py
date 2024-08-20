@@ -1,41 +1,72 @@
+import os
 from functools import wraps
 from typing import Any, Optional, Union
 
 import aiohttp
+import jwt
 from aiohttp.formdata import FormData
-from fastapi import Request, Response
+from fastapi import Request, Response, HTTPException, status
 from fastapi.responses import FileResponse
 from fastapi.routing import APIRouter
 
-import config
+import crud
 
 router = APIRouter()
 
 
-def gateway_router(method, path: str, payload_key: str, service_url: str, response_model: Optional[Any] = None):
+def gateway_router(method,
+                   path: str,
+                   payload_key: str,
+                   service_url: str,
+                   access_level: str | None = None,
+                   response_model: Optional[Any] = None):
     app_method = method(path, response_model=response_model)
 
     def wrapper(endpoint):
         @app_method
         @wraps(endpoint)
         async def decorator(request: Request, response: Response, **kwargs):
-            scope = request.scope
-            headers = {}
-            request_method = scope['method'].lower()
-            path = scope['path']
-            payload = kwargs.get(payload_key)
-            data = config.generate_data(kwargs, payload, payload_key)
+            if access_level is None:
+                scope = request.scope
+                headers = {}
+                request_method = scope['method'].lower()
+                path = scope['path']
+                payload = kwargs.get(payload_key)
+                data = crud.generate_data(kwargs, payload, payload_key)
 
-            url = f'{service_url}{path}'
+                url = f'{service_url}{path}'
 
-            response_data = await send_request(
-                url=url,
-                method=request_method,
-                data=data,
-                headers=headers
-            )
+                response_data = await send_request(
+                    url=url,
+                    method=request_method,
+                    data=data,
+                    headers=headers
+                )
 
-            return response_data
+                return response_data
+            else:
+                decoded_token = jwt.decode(kwargs.get('token'), os.getenv("SECRET_KEY"), algorithms=["HS256"])
+                has_access = decoded_token["claims"]
+                if access_level in has_access:
+                    scope = request.scope
+                    headers = {}
+                    request_method = scope['method'].lower()
+                    path = scope['path']
+                    payload = kwargs.get(payload_key)
+                    data = crud.generate_data(kwargs, payload, payload_key)
+
+                    url = f'{service_url}{path}'
+
+                    response_data = await send_request(
+                        url=url,
+                        method=request_method,
+                        data=data,
+                        headers=headers
+                    )
+
+                    return response_data
+                else:
+                    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No access")
 
     return wrapper
 
