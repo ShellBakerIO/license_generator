@@ -44,27 +44,36 @@ def gateway_router(method,
 
                 return response_data
             else:
-                decoded_token = jwt.decode(kwargs.get('token'), os.getenv("SECRET_KEY"), algorithms=['HS256'])
-                has_access = decoded_token["claims"]
-                if access_level in has_access:
-                    scope = request.scope
-                    headers = {}
-                    request_method = scope['method'].lower()
-                    path = scope['path']
-                    payload = kwargs.get(payload_key)
-                    data = crud.form_data(kwargs, payload, payload_key)
-                    url = crud.form_url(service_url, path, kwargs)
+                try:
+                    decoded_token = jwt.decode(kwargs.get('token'),
+                                               os.getenv("SECRET_KEY"),
+                                               algorithms=['HS256'],
+                                               options={'verify_aud': True}
+                                               )
+                    has_access = decoded_token["claims"]
 
-                    response_data = await send_request(
-                        url=url,
-                        method=request_method,
-                        data=data,
-                        headers=headers
-                    )
+                    if access_level in has_access:
+                        scope = request.scope
+                        headers = {}
+                        request_method = scope['method'].lower()
+                        path = scope['path']
+                        payload = kwargs.get(payload_key)
+                        data = crud.form_data(kwargs, payload, payload_key)
+                        url = crud.form_url(service_url, path, kwargs)
 
-                    return response_data
-                else:
-                    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No access")
+                        response_data = await send_request(
+                            url=url,
+                            method=request_method,
+                            data=data,
+                            headers=headers
+                        )
+
+                        return response_data
+                    else:
+                        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No access")
+
+                except jwt.InvalidSignatureError:
+                    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
     return wrapper
 
