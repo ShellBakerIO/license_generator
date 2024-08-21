@@ -117,9 +117,9 @@ def read_users(db: Session = Depends(get_db)):
 
 
 @app.post("/users/", response_model=schemas.User)
-def create_user(username: str, db: Session = Depends(get_db)):
+def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     logger.info("Добавлен новый пользователь")
-    return crud.create_user(db=db, username=username)
+    return crud.create_user(db=db, user=user)
 
 
 @app.delete("/users/", response_model=schemas.User)
@@ -142,9 +142,9 @@ def read_roles(db: Session = Depends(get_db)):
 
 
 @app.post("/roles/", response_model=schemas.Role)
-def create_role(rolename: str, db: Session = Depends(get_db)):
+def create_role(role: schemas.RoleCreate, db: Session = Depends(get_db)):
     logger.info("Добавлена новая роль")
-    return crud.create_role(db=db, rolename=rolename)
+    return crud.create_role(db=db, role=role)
 
 
 @app.delete("/roles/", response_model=schemas.Role)
@@ -160,13 +160,13 @@ def delete_role(id: int, db: Session = Depends(get_db)):
 
 
 @app.patch("/users/{user_id}/", response_model=schemas.User)
-def add_role_to_user(role_id: int, user_id: int, added: bool, db: Session = Depends(get_db)):
+def add_role_to_user(role_to_user: schemas.Role_to_User, db: Session = Depends(get_db)):
     try:
         user = crud.add_role_to_user(db=db,
-                                     user_id=user_id,
-                                     role_id=role_id,
-                                     added=added)
-        logger.info(f"Роль с ID {role_id} добавлена пользователю с ID {user_id}")
+                                     user_id=role_to_user.user_id,
+                                     role_id=role_to_user.role_id,
+                                     added=role_to_user.added)
+        logger.info(f"Роль с ID {role_to_user.role_id} добавлена пользователю с ID {role_to_user.user_id}")
         return user
     except ValueError as e:
         logger.error(str(e))
@@ -181,13 +181,13 @@ def read_accesses(db: Session = Depends(get_db)):
 
 
 @app.patch("/roles/{role_id}/", response_model=schemas.Role)
-def edit_access_for_role(access_id: int, role_id: int, has_access: bool, db: Session = Depends(get_db)):
+def edit_access_for_role(access_to_role: schemas.Access_to_Role, db: Session = Depends(get_db)):
     try:
         role = crud.edit_access_for_role(db=db,
-                                         role_id=role_id,
-                                         access_id=access_id,
-                                         has_access=has_access)
-        logger.info(f"Доступ с ID {access_id} добавлен к роли с ID {role_id}")
+                                         role_id=access_to_role.role_id,
+                                         access_id=access_to_role.access_id,
+                                         has_access=access_to_role.has_access)
+        logger.info(f"Доступ с ID {access_to_role.access_id} добавлен к роли с ID {access_to_role.role_id}")
         return role
     except ValueError as e:
         logger.error(str(e))

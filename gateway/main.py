@@ -4,7 +4,8 @@ from fastapi import Depends, FastAPI, File, UploadFile, Request, Response
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
 from dto.license import LicensesInfo
-from starlette.middleware.cors import CORSMiddleware
+from dto.user import UserCreate, RoleCreate, Access_to_Role, Role_to_User
+from fastapi.middleware.cors import CORSMiddleware
 
 from api_wrapper import gateway_router
 
@@ -124,12 +125,12 @@ def read_users(
 
 @gateway_router(app.post,
                 "/users/",
-                payload_key='username',
+                payload_key='user',
                 service_url=os.environ.get('AUTH_SERVICE_URL'),
                 access_level="USER_ROLE_MANAGEMENT",
                 )
 def create_user(
-    username: str,
+    user: UserCreate,
     token: Annotated[str, Depends(oauth2_scheme)],
     request: Request,
     response: Response,
@@ -168,12 +169,12 @@ def read_roles(
 
 @gateway_router(app.post,
                 "/roles/",
-                payload_key='rolename',
+                payload_key='role',
                 service_url=os.environ.get('AUTH_SERVICE_URL'),
                 access_level="USER_ROLE_MANAGEMENT",
                 )
 def create_role(
-    rolename: str,
+    role: RoleCreate,
     token: Annotated[str, Depends(oauth2_scheme)],
     request: Request,
     response: Response,
@@ -203,9 +204,7 @@ def delete_role(
                 access_level="USER_ROLE_MANAGEMENT",
                 )
 async def add_role_to_user(
-    role_id: int,
-    user_id: int,
-    added: bool,
+    role_to_user: Role_to_User,
     token: Annotated[str, Depends(oauth2_scheme)],
     request: Request,
     response: Response,
@@ -233,9 +232,7 @@ def read_accesses(
                 access_level="USER_ROLE_MANAGEMENT",
                 )
 async def edit_access_for_role(
-    access_id: int,
-    role_id: int,
-    has_access: bool,
+    access_to_role: Access_to_Role,
     token: Annotated[str, Depends(oauth2_scheme)],
     request: Request,
     response: Response,
