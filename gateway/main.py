@@ -3,7 +3,6 @@ from typing import Annotated
 from fastapi import Depends, FastAPI, File, UploadFile, Request, Response
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
-from dto.user import UserCreate, RoleCreate, AccessCreate, Access_to_Role, Role_to_User, RoleDelete, UserDelete
 from dto.license import LicensesInfo
 from starlette.middleware.cors import CORSMiddleware
 
@@ -125,12 +124,12 @@ def read_users(
 
 @gateway_router(app.post,
                 "/users/",
-                payload_key='user',
+                payload_key='username',
                 service_url=os.environ.get('AUTH_SERVICE_URL'),
                 access_level="USER_ROLE_MANAGEMENT",
                 )
 def create_user(
-    user: UserCreate,
+    username: str,
     token: Annotated[str, Depends(oauth2_scheme)],
     request: Request,
     response: Response,
@@ -140,12 +139,12 @@ def create_user(
 
 @gateway_router(app.delete,
                 "/users/",
-                payload_key='user',
+                payload_key='id',
                 service_url=os.environ.get('AUTH_SERVICE_URL'),
                 access_level="USER_ROLE_MANAGEMENT",
                 )
 def delete_user(
-    user: UserDelete,
+    id: int,
     token: Annotated[str, Depends(oauth2_scheme)],
     request: Request,
     response: Response,
@@ -169,12 +168,12 @@ def read_roles(
 
 @gateway_router(app.post,
                 "/roles/",
-                payload_key='role',
+                payload_key='rolename',
                 service_url=os.environ.get('AUTH_SERVICE_URL'),
                 access_level="USER_ROLE_MANAGEMENT",
                 )
 def create_role(
-    role: RoleCreate,
+    rolename: str,
     token: Annotated[str, Depends(oauth2_scheme)],
     request: Request,
     response: Response,
@@ -184,12 +183,12 @@ def create_role(
 
 @gateway_router(app.delete,
                 "/roles/",
-                payload_key='role',
+                payload_key='id',
                 service_url=os.environ.get('AUTH_SERVICE_URL'),
                 access_level="USER_ROLE_MANAGEMENT",
                 )
 def delete_role(
-    role: RoleDelete,
+    id: int,
     token: Annotated[str, Depends(oauth2_scheme)],
     request: Request,
     response: Response,
@@ -204,7 +203,9 @@ def delete_role(
                 access_level="USER_ROLE_MANAGEMENT",
                 )
 async def add_role_to_user(
-    role_to_user: Role_to_User,
+    role_id: int,
+    user_id: int,
+    added: bool,
     token: Annotated[str, Depends(oauth2_scheme)],
     request: Request,
     response: Response,
@@ -226,28 +227,15 @@ def read_accesses(
     pass
 
 
-@gateway_router(app.post,
-                "/accesses/",
-                payload_key='access',
-                service_url=os.environ.get('AUTH_SERVICE_URL'),
-                access_level="USER_ROLE_MANAGEMENT",
-                )
-async def create_access(
-    access: AccessCreate,
-    token: Annotated[str, Depends(oauth2_scheme)],
-    request: Request,
-    response: Response,
-):
-    pass
-
-
 @gateway_router(app.patch, "/roles/{role_id}/",
                 payload_key='access_to_role',
                 service_url=os.environ.get('AUTH_SERVICE_URL'),
                 access_level="USER_ROLE_MANAGEMENT",
                 )
 async def edit_access_for_role(
-    access_to_role: Access_to_Role,
+    access_id: int,
+    role_id: int,
+    has_access: bool,
     token: Annotated[str, Depends(oauth2_scheme)],
     request: Request,
     response: Response,

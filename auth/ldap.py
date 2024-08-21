@@ -2,7 +2,7 @@ from ldap3 import Server, Connection, SUBTREE, ALL
 from dotenv import load_dotenv
 import os
 
-from models import Role, Access
+from models import Access
 
 load_dotenv()
 
