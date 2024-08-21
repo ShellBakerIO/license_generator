@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 
 from models import User, Role, Access
+from schemas import UserCreate, RoleCreate
 
 
 def generate_access_dict(db: Session, role_id: int | None = None, access_id: int | None = None, has_access: bool = False):
@@ -26,8 +27,8 @@ def get_users(db: Session):
     return db.query(User).all()
 
 
-def create_user(db: Session, username: str):
-    db_user = User(username=username)
+def create_user(db: Session, user: UserCreate):
+    db_user = User(username=user.username)
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
@@ -39,8 +40,8 @@ def get_roles(db: Session):
     return roles
 
 
-def create_role(db: Session, rolename: str):
-    db_role = Role(name=rolename, role_accesses=generate_access_dict(db, role_id=None))
+def create_role(db: Session, role: RoleCreate):
+    db_role = Role(name=role.name, role_accesses=generate_access_dict(db, role_id=None))
     db.add(db_role)
     db.commit()
     db.refresh(db_role)

@@ -44,7 +44,6 @@ def gateway_router(method,
 
                 return response_data
             else:
-                print(1, kwargs)
                 decoded_token = jwt.decode(kwargs.get('token'), os.getenv("SECRET_KEY"), algorithms=['HS256'])
                 has_access = decoded_token["claims"]
                 if access_level in has_access:
