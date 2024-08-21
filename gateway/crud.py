@@ -1,7 +1,8 @@
+import urllib.parse
 from aiohttp.formdata import FormData
 
 
-def generate_data(kwargs, payload, payload_key):
+def form_data(kwargs, payload, payload_key):
     data = {}
 
     if payload_key == 'form_data':
@@ -20,7 +21,22 @@ def generate_data(kwargs, payload, payload_key):
         data.add_field('machine_digest_file', machine_digest_file.file,
                        filename=machine_digest_file.filename,
                        content_type=machine_digest_file.content_type)
+    elif payload_key == 'username':
+        data = {payload_key: payload}
+    elif payload_key == 'rolename':
+        data = {payload_key: payload}
+    elif payload_key == 'id':
+        data = {payload_key: payload}
     else:
         data = payload.__dict__ if payload else {}
 
     return data
+
+
+def form_url(service_url: str, path: str, query_params: dict) -> str:
+    url = f"{service_url}{path}"
+    if query_params:
+        query_string = urllib.parse.urlencode(query_params)
+        url = f"{url}?{query_string}"
+
+    return url

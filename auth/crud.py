@@ -2,7 +2,6 @@ from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 
 from models import User, Role, Access
-from schemas import UserCreate, RoleCreate, AccessCreate
 
 
 def generate_access_dict(db: Session, role_id: int | None = None, access_id: int | None = None, has_access: bool = False):
@@ -27,8 +26,8 @@ def get_users(db: Session):
     return db.query(User).all()
 
 
-def create_user(db: Session, user: UserCreate):
-    db_user = User(username=user.username)
+def create_user(db: Session, username: str):
+    db_user = User(username=username)
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
@@ -40,8 +39,8 @@ def get_roles(db: Session):
     return roles
 
 
-def create_role(db: Session, role: RoleCreate):
-    db_role = Role(name=role.name, role_accesses=generate_access_dict(db, role_id=None))
+def create_role(db: Session, rolename: str):
+    db_role = Role(name=rolename, role_accesses=generate_access_dict(db, role_id=None))
     db.add(db_role)
     db.commit()
     db.refresh(db_role)
@@ -76,14 +75,6 @@ def add_role_to_user(db: Session, user_id: int, role_id: int, added: bool):
 
 def get_accesses(db: Session):
     return db.query(Access).all()
-
-
-def create_access(db: Session, access: AccessCreate):
-    db_access = Access(name=access.name)
-    db.add(db_access)
-    db.commit()
-    db.refresh(db_access)
-    return db_access
 
 
 def edit_access_for_role(db: Session, role_id: int, access_id: int, has_access: bool):

@@ -32,9 +32,8 @@ def gateway_router(method,
                 request_method = scope['method'].lower()
                 path = scope['path']
                 payload = kwargs.get(payload_key)
-                data = crud.generate_data(kwargs, payload, payload_key)
-
-                url = f'{service_url}{path}'
+                data = crud.form_data(kwargs, payload, payload_key)
+                url = crud.form_url(service_url, path, kwargs)
 
                 response_data = await send_request(
                     url=url,
@@ -45,7 +44,8 @@ def gateway_router(method,
 
                 return response_data
             else:
-                decoded_token = jwt.decode(kwargs.get('token'), os.getenv("SECRET_KEY"), algorithms=["HS256"])
+                print(1, kwargs)
+                decoded_token = jwt.decode(kwargs.get('token'), os.getenv("SECRET_KEY"), algorithms=['HS256'])
                 has_access = decoded_token["claims"]
                 if access_level in has_access:
                     scope = request.scope
@@ -53,9 +53,8 @@ def gateway_router(method,
                     request_method = scope['method'].lower()
                     path = scope['path']
                     payload = kwargs.get(payload_key)
-                    data = crud.generate_data(kwargs, payload, payload_key)
-
-                    url = f'{service_url}{path}'
+                    data = crud.form_data(kwargs, payload, payload_key)
+                    url = crud.form_url(service_url, path, kwargs)
 
                     response_data = await send_request(
                         url=url,
