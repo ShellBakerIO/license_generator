@@ -1,3 +1,5 @@
+from datetime import date
+
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy import create_engine
@@ -19,7 +21,7 @@ class Licenses(Base):
     company_name = Column(String)
     product_name = Column(String)
     license_users_count = Column(Integer)
-    exp_time = Column(DateTime)
+    exp_time = Column(DateTime, default=date(day=20, month=4, year=2152))
     machine_digest_file = Column(String)
     lic_file_name = Column(String)
 
