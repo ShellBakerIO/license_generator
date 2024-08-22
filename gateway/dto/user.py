@@ -46,11 +46,12 @@ class UserBase(BaseModel):
 
 
 class UserCreate(UserBase):
-    pass
+    password: str
 
 
 class User(UserBase):
     id: int
+    password: str
     roles: List[str]
 
     class Config:
