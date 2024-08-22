@@ -2,6 +2,7 @@ from ldap3 import Server, Connection, SUBTREE, ALL
 from dotenv import load_dotenv
 import os
 
+import crud
 from models import Access, User, Role
 
 load_dotenv()
@@ -36,7 +37,18 @@ def authenticate(user_name, user_password, db):
         accesses = [access.name for access in accesses]
         return True, accesses, "Admin"
 
-    elif db.query(User).filter(User.username == user_name).first() and db.query(User).filter(User.password == user_password).first():
+    user_name = db.query(User).filter(User.username == user_name).first()
+
+    private_key = crud.load_private_key()
+    decrypted_password = crud.decrypt_password(user_password, private_key)
+    hashed_password = crud.hash_password(decrypted_password)
+
+    if user_name == "admin" and hashed_password == db.query(User).filter(User.password == user_password).first():
+        accesses = db.query(Access).all()
+        accesses = [access.name for access in accesses]
+        return True, accesses, "Admin"
+
+    elif user_name and hashed_password == db.query(User).filter(User.password == user_password).first():
         user = db.query(User).filter(User.username == user_name).first()
         for role in user.roles:
             if db.query(Role).filter(Role.name == role).first():

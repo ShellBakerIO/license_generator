@@ -21,3 +21,6 @@ RETRIEVE_FILE = os.environ.get("RETRIEVE_FILE")
 USER_ROLE_MANAGEMENT = os.environ.get("USER_ROLE_MANAGEMENT")
 
 LDAP_PASSWORD = os.environ.get("LDAP_PASSWORD")
+
+PUBLIC_KEY = os.environ.get("AdvanceEngPublic")
+PRIVATE_KEY = os.environ.get("AdvanceEngPrivate")

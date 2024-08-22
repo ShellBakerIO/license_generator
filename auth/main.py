@@ -10,9 +10,9 @@ from loguru import logger
 from sqlalchemy.orm import Session
 
 import crud
-from ldap import authenticate
-from models import SessionLocal, engine, Base, Access, User, Role
 import schemas
+from ldap import authenticate
+from models import SessionLocal, engine, Base, Access, User
 
 app = FastAPI(title="AdminService")
 router = APIRouter()
@@ -48,6 +48,7 @@ async def startup():
 @app.post("/token")
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     auth, accesses, role = authenticate(form_data.username, form_data.password, db)
+    base_email = "pochta@adv.ru"
 
     if auth:
         logger.bind(user=form_data.username).info("В систему вошел пользователь")
@@ -62,12 +63,13 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
         access_token = jwt.encode(token_data, os.getenv("SECRET_KEY"), algorithm="HS256")
 
         if db.query(User).filter(User.username == "admin").first() is None:
-            user = User(username=form_data.username, password=form_data.password, roles=[role])
+            user = User(username=form_data.username, email=base_email, password=form_data.password, roles=[role])
             db.add(user)
             db.commit()
             db.refresh(user)
         elif db.query(User).filter(User.username == form_data.username).first() is None:
-            user = User(username=form_data.username, password=form_data.password, roles=[])
+            user = db.query(User).filter(User.username == form_data.username).first()
+            user = User(username=form_data.username, email=user.email, password=form_data.password, roles=[])
             db.add(user)
             db.commit()
             db.refresh(user)
@@ -100,6 +102,12 @@ async def read_users_me(token: str = Depends(oauth2_scheme)):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
 
+@app.get("/public_key")
+def read_public_key():
+    public_key = os.getenv("PUBLIC_KEY")
+    return public_key
+
+
 @app.get("/users/", response_model=List[schemas.User])
 def read_users(db: Session = Depends(get_db)):
     users = crud.get_users(db)
@@ -115,12 +123,7 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
 
 @app.delete("/users/", response_model=schemas.User)
 def delete_user(id: int, db: Session = Depends(get_db)):
-    user = db.get(User, id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    db.delete(user)
-    db.commit()
+    user = crud.delete_user(db=db, id=id)
     logger.info("Пользователь удален")
     return user
 
@@ -140,20 +143,15 @@ def create_role(role: schemas.RoleCreate, db: Session = Depends(get_db)):
 
 @app.delete("/roles/", response_model=schemas.Role)
 def delete_role(id: int, db: Session = Depends(get_db)):
-    role = db.get(Role, id)
-    if not role:
-        raise HTTPException(status_code=404, detail="Role not found")
-
-    db.delete(role)
-    db.commit()
+    role = crud.delete_role(db=db, id=id)
     logger.info("Роль удалена")
     return role
 
 
 @app.patch("/users/{user_id}/", response_model=schemas.User)
-def add_role_to_user(role_to_user: schemas.Role_to_User, db: Session = Depends(get_db)):
+def change_user_role(role_to_user: schemas.Role_to_User, db: Session = Depends(get_db)):
     try:
-        user = crud.add_role_to_user(db=db,
+        user = crud.change_user_role(db=db,
                                      user_id=role_to_user.user_id,
                                      role_id=role_to_user.role_id,
                                      added=role_to_user.added)
@@ -172,9 +170,9 @@ def read_accesses(db: Session = Depends(get_db)):
 
 
 @app.patch("/roles/{role_id}/", response_model=schemas.Role)
-def edit_access_for_role(access_to_role: schemas.Access_to_Role, db: Session = Depends(get_db)):
+def change_role_accesses(access_to_role: schemas.Access_to_Role, db: Session = Depends(get_db)):
     try:
-        role = crud.edit_access_for_role(db=db,
+        role = crud.change_role_accesses(db=db,
                                          role_id=access_to_role.role_id,
                                          access_id=access_to_role.access_id,
                                          has_access=access_to_role.has_access)
