@@ -57,7 +57,7 @@ def generate_license(
         "company": lic.company_name,
         "product_name": lic.product_name,
         "license_users_count": lic.license_users_count,
-        "exp_time": lic.exp_time,
+        "exp_time": str(lic.exp_time),
         "product_key": product_key
     }
 

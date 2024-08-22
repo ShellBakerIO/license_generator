@@ -1,3 +1,5 @@
+from datetime import date
+
 from fastapi import Form
 from pydantic import BaseModel
 
@@ -9,8 +11,13 @@ class LicensesInfo(BaseModel):
     exp_time: str
 
     @classmethod
-    def as_form(cls, company_name: str = Form(...), product_name: str = Form(...),
-                license_users_count: int = Form(...), exp_time: str = Form(...)):
+    def as_form(
+        cls,
+        company_name: str = Form(...),
+        product_name: str = Form(...),
+        license_users_count: int = Form(...),
+        exp_time: str = Form(str(date(day=20, month=4, year=2152))),
+    ):
 
         return cls(company_name=company_name,
                    product_name=product_name,
