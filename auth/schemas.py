@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from typing import List
 
 
@@ -43,16 +43,16 @@ class Role(RoleBase):
 
 class UserBase(BaseModel):
     username: str
+    email: EmailStr
+    password: str
 
 
 class UserCreate(UserBase):
-    password: str
     pass
 
 
 class User(UserBase):
     id: int
-    password: str
     roles: List[str]
 
     class Config:

@@ -1,10 +1,10 @@
 import re
 import shutil
-import subprocess
 from datetime import datetime
 
-from models import Licenses
 import transliterate
+
+from models import Licenses
 
 
 def transliterate_license_filename(company_name, product_name, license_users_count):
@@ -38,4 +38,3 @@ def save_machine_digest_file(machine_digest_file, machine_digest_file_name):
     path = f"files/machine_digest_files/{machine_digest_file_name}"
     with open(path, "wb+") as buffer:
         shutil.copyfileobj(machine_digest_file.file, buffer)
-

@@ -111,6 +111,20 @@ def find_machine_digest(
 
 
 @gateway_router(app.get,
+                "/public_key",
+                payload_key=None,
+                service_url=os.environ.get('AUTH_SERVICE_URL'),
+                access_level="USER_ROLE_MANAGEMENT",
+                )
+def read_public_key(
+        token: Annotated[str, Depends(oauth2_scheme)],
+        request: Request,
+        response: Response,
+):
+    pass
+
+
+@gateway_router(app.get,
                 "/users/",
                 payload_key=None,
                 service_url=os.environ.get('AUTH_SERVICE_URL'),
@@ -204,7 +218,7 @@ def delete_role(
                 service_url=os.environ.get('AUTH_SERVICE_URL'),
                 access_level="USER_ROLE_MANAGEMENT",
                 )
-async def add_role_to_user(
+async def change_user_role(
     role_to_user: Role_to_User,
     token: Annotated[str, Depends(oauth2_scheme)],
     request: Request,
@@ -232,7 +246,7 @@ def read_accesses(
                 service_url=os.environ.get('AUTH_SERVICE_URL'),
                 access_level="USER_ROLE_MANAGEMENT",
                 )
-async def edit_access_for_role(
+async def change_role_accesses(
     access_to_role: Access_to_Role,
     token: Annotated[str, Depends(oauth2_scheme)],
     request: Request,

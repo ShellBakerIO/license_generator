@@ -1,4 +1,7 @@
 alembic==1.13.1
+bcrypt==4.2.0
+cryptography==43.0.0
+email_validator==2.2.0
 fastapi == 0.112.0
 uvicorn == 0.30.4
 loguru==0.7.2
