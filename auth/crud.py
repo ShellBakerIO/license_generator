@@ -24,11 +24,12 @@ def generate_access_dict(db: Session, role_id: int | None = None, access_id: int
 
 
 def get_users(db: Session):
-    return db.query(User).all()
+    users = db.query(User).all()
+    return users
 
 
 def create_user(db: Session, user: UserCreate):
-    db_user = User(username=user.username)
+    db_user = User(username=user.username, password=user.password)
     db.add(db_user)
     db.commit()
     db.refresh(db_user)

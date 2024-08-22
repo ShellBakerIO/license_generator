@@ -2,7 +2,7 @@ from ldap3 import Server, Connection, SUBTREE, ALL
 from dotenv import load_dotenv
 import os
 
-from models import Access
+from models import Access, User, Role
 
 load_dotenv()
 
@@ -36,22 +36,37 @@ def authenticate(user_name, user_password, db):
         accesses = [access.name for access in accesses]
         return True, accesses, "Admin"
 
-    try:
-        conn = create_connection('CN=Насибов Фариз,OU=External,DC=advengineering,DC=ru',
-                                 os.getenv('LDAP_PASSWORD'))
-        conn.bind()
+    elif db.query(User).filter(User.username == user_name).first() and db.query(User).filter(User.password == user_password).first():
+        user = db.query(User).filter(User.username == user_name).first()
+        for role in user.roles:
+            if db.query(Role).filter(Role.name == role).first():
+                role = db.query(Role).filter(Role.name == role).first()
+            else:
+                raise ValueError('Role not found')
+        accesses = role.role_accesses
+        user_accesses = []
+        for role in accesses:
+            if accesses[role]:
+                user_accesses.append(role)
+        return True, user_accesses, role
 
-        search_filter = f'(sAMAccountName={user_name})'
-        conn.search(search_base='DC=advengineering,DC=ru',
-                    search_filter=search_filter,
-                    search_scope=SUBTREE,
-                    attributes='userPrincipalName')
+    else:
+        try:
+            conn = create_connection('CN=Насибов Фариз,OU=External,DC=advengineering,DC=ru',
+                                     os.getenv('LDAP_PASSWORD'))
+            conn.bind()
 
-        return is_valid_credentials(conn, user_password), [], None
+            search_filter = f'(sAMAccountName={user_name})'
+            conn.search(search_base='DC=advengineering,DC=ru',
+                        search_filter=search_filter,
+                        search_scope=SUBTREE,
+                        attributes='userPrincipalName')
 
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        return False
+            return is_valid_credentials(conn, user_password), [], None
 
-    finally:
-        conn.unbind()
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            return False
+
+        finally:
+            conn.unbind()

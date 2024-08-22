@@ -62,12 +62,12 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
         access_token = jwt.encode(token_data, os.getenv("SECRET_KEY"), algorithm="HS256")
 
         if db.query(User).filter(User.username == "admin").first() is None:
-            user = User(username=form_data.username, roles=[role])
+            user = User(username=form_data.username, password=form_data.password, roles=[role])
             db.add(user)
             db.commit()
             db.refresh(user)
         elif db.query(User).filter(User.username == form_data.username).first() is None:
-            user = User(username=form_data.username, roles=[])
+            user = User(username=form_data.username, password=form_data.password, roles=[])
             db.add(user)
             db.commit()
             db.refresh(user)

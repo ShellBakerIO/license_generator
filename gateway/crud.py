@@ -31,7 +31,7 @@ def form_data(kwargs, payload, payload_key):
 
 def form_url(service_url: str, path: str, query_params: dict) -> str:
     url = f"{service_url}{path}"
-    if query_params:
+    if query_params and path != '/token':
         del query_params['token']
         query_string = urllib.parse.urlencode(query_params)
         url = f"{url}?{query_string}"
