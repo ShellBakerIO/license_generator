@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 
 from fastapi import FastAPI, UploadFile, File, Depends, HTTPException, status
@@ -29,38 +30,44 @@ async def startup():
 
 @app.post("/generate_license")
 def generate_license(
-    lic: LicensesInfo = Depends(LicensesInfo.as_form),
-    machine_digest_file: UploadFile = File(...),
-    db: Session = Depends(get_db),
+        lic: LicensesInfo = Depends(LicensesInfo.as_form),
+        machine_digest_file: UploadFile = File(...),
+        db: Session = Depends(get_db),
 ):
+    if machine_digest_file.content_type != "text/plain":
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="File type not supported")
 
     today_date = datetime.now().strftime("%Y-%m-%d")
     lic_file_name = (
-        crud.transliterate_license_filename(lic.company_name, lic.product_name, lic.license_users_count)
-        + f"_{lic.exp_time}"
+            crud.transliterate_license_filename(lic.company_name, lic.product_name, lic.license_users_count)
+            + f"_{lic.exp_time}"
     )
     machine_digest_file_name = (
-        crud.transliterate_license_filename(lic.company_name, lic.product_name, lic.license_users_count)
-        + f"_{today_date}"
+            crud.transliterate_license_filename(lic.company_name, lic.product_name, lic.license_users_count)
+            + f"_{today_date}"
     )
 
     crud.add_license_in_db(db, lic, machine_digest_file_name, lic_file_name)
     crud.save_machine_digest_file(machine_digest_file, machine_digest_file_name)
-    crud.run_script_to_save_files(lic, machine_digest_file_name, lic_file_name)
 
     path = f"files/machine_digest_files/{machine_digest_file_name}"
     product_key = open(path, "r", encoding="utf-8").read()
+
+    license_data = {
+        "company": lic.company_name,
+        "product_name": lic.product_name,
+        "license_users_count": lic.license_users_count,
+        "exp_time": lic.exp_time,
+        "product_key": product_key
+    }
+
     license_path = f"files/licenses/{lic_file_name}.txt"
     with open(license_path, "w", encoding="utf-8") as f:
-        f.write(f"Компания: {lic.company_name}\n")
-        f.write(f"ПО: {lic.product_name}\n")
-        f.write(f"Количество лицензий: {lic.license_users_count}\n")
-        f.write(f"Время действия: {lic.exp_time}\n")
-        f.write(f"Ключ продукта: {product_key}")
-        f.close()
+        json.dump(license_data, f, ensure_ascii=False, indent=4)
+
     logger.bind(lic_file_name=lic_file_name).info("Создана лицензия")
 
-    return FileResponse(license_path, filename=f"{lic_file_name}")
+    return FileResponse(license_path, filename=f"{lic_file_name}.txt")
 
 
 @app.get("/all_licenses")
