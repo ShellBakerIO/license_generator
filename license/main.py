@@ -5,6 +5,7 @@ from fastapi import FastAPI, UploadFile, File, Depends, HTTPException, status
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from loguru import logger
+from sqlalchemy import JSON
 from sqlalchemy.orm import Session, sessionmaker
 
 import crud
@@ -30,6 +31,7 @@ async def startup():
 
 @app.post("/generate_license")
 def generate_license(
+        additional_license_information: str | None,
         lic: LicensesInfo = Depends(LicensesInfo.as_form),
         machine_digest_file: UploadFile = File(...),
         db: Session = Depends(get_db),
@@ -60,6 +62,14 @@ def generate_license(
         "exp_time": str(lic.exp_time),
         "product_key": product_key
     }
+
+    if additional_license_information:
+        print(additional_license_information)
+        additional_license_information = json.loads(additional_license_information)
+        additional_info = {}
+        for key in additional_license_information:
+            additional_info[key] = additional_license_information[key]
+        license_data["additional_info"] = additional_info
 
     license_path = f"files/licenses/{lic_file_name}.txt"
     with open(license_path, "w", encoding="utf-8") as f:
