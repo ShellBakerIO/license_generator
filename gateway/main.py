@@ -1,13 +1,13 @@
 import os
 from typing import Annotated
+
 from fastapi import Depends, FastAPI, File, UploadFile, Request, Response
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
+from api_wrapper import gateway_router
 from dto.license import LicensesInfo
 from dto.user import UserCreate, RoleCreate, Access_to_Role, Role_to_User
-from fastapi.middleware.cors import CORSMiddleware
-
-from api_wrapper import gateway_router
 
 app = FastAPI()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token")
@@ -60,6 +60,7 @@ async def generate_license(
     token: Annotated[str, Depends(oauth2_scheme)],
     request: Request,
     response: Response,
+    additional_license_information: str | None,
     lic: LicensesInfo = Depends(LicensesInfo.as_form),
     machine_digest_file: UploadFile = File(...),
 ):
@@ -114,10 +115,9 @@ def find_machine_digest(
                 "/public_key",
                 payload_key=None,
                 service_url=os.environ.get('AUTH_SERVICE_URL'),
-                access_level="USER_ROLE_MANAGEMENT",
+                access_level=None,
                 )
 def read_public_key(
-        token: Annotated[str, Depends(oauth2_scheme)],
         request: Request,
         response: Response,
 ):
