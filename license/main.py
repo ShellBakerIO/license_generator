@@ -5,7 +5,6 @@ from fastapi import FastAPI, UploadFile, File, Depends, HTTPException, status
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from loguru import logger
-from sqlalchemy import JSON
 from sqlalchemy.orm import Session, sessionmaker
 
 import crud
@@ -39,41 +38,11 @@ def generate_license(
     if machine_digest_file.content_type != "text/plain":
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="File type not supported")
 
-    today_date = datetime.now().strftime("%Y-%m-%d")
-    lic_file_name = (
-            crud.transliterate_license_filename(lic.company_name, lic.product_name, lic.license_users_count)
-            + f"_{lic.exp_time}"
-    )
-    machine_digest_file_name = (
-            crud.transliterate_license_filename(lic.company_name, lic.product_name, lic.license_users_count)
-            + f"_{today_date}"
-    )
-
+    lic_file_name, machine_digest_file_name = crud.form_file_name(lic)
     crud.add_license_in_db(db, lic, machine_digest_file_name, lic_file_name)
     crud.save_machine_digest_file(machine_digest_file, machine_digest_file_name)
-
-    path = f"files/machine_digest_files/{machine_digest_file_name}"
-    product_key = open(path, "r", encoding="utf-8").read()
-
-    license_data = {
-        "company": lic.company_name,
-        "product_name": lic.product_name,
-        "license_users_count": lic.license_users_count,
-        "exp_time": str(lic.exp_time),
-        "product_key": product_key
-    }
-
-    if additional_license_information:
-        print(additional_license_information)
-        additional_license_information = json.loads(additional_license_information)
-        additional_info = {}
-        for key in additional_license_information:
-            additional_info[key] = additional_license_information[key]
-        license_data["additional_info"] = additional_info
-
     license_path = f"files/licenses/{lic_file_name}.txt"
-    with open(license_path, "w", encoding="utf-8") as f:
-        json.dump(license_data, f, ensure_ascii=False, indent=4)
+    crud.save_license_file(lic, additional_license_information, license_path, machine_digest_file_name, lic_file_name)
 
     logger.bind(lic_file_name=lic_file_name).info("Создана лицензия")
 

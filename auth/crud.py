@@ -17,6 +17,35 @@ from schemas import UserCreate, RoleCreate
 load_dotenv()
 
 
+def create_accesses(db):
+    if db.query(Access).filter(Access.name == "READ_LICENSE").first() is None:
+        read_license = Access(name=os.getenv("READ_LICENSE"))
+        create_license = Access(name=os.getenv("CREATE_LICENSE"))
+        retrieve_file = Access(name=os.getenv("RETRIEVE_FILE"))
+        user_role_management = Access(name=os.getenv("USER_ROLE_MANAGEMENT"))
+        db.add_all([read_license, create_license, retrieve_file, user_role_management])
+        db.commit()
+        db.refresh(read_license)
+        db.refresh(create_license)
+        db.refresh(retrieve_file)
+        db.refresh(user_role_management)
+
+
+def add_authorized_user_in_db(form_data, role, db):
+    admin_email = "admin@admin.com"
+    if db.query(User).filter(User.username == "admin").first() is None:
+        user = User(username=form_data.username, email=admin_email, password=form_data.password, roles=[role])
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    elif db.query(User).filter(User.username == form_data.username).first() is None:
+        user = db.query(User).filter(User.username == form_data.username).first()
+        user = User(username=form_data.username, email=user.email, password=form_data.password, roles=[])
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+
 def load_private_key():
     private_key_data = os.getenv("PRIVATE_KEY")
     private_key = serialization.load_pem_private_key(

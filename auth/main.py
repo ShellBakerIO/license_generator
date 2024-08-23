@@ -23,17 +23,7 @@ Base.metadata.create_all(bind=engine)
 
 def get_db():
     db = SessionLocal()
-    if db.query(Access).filter(Access.name == "READ_LICENSE").first() is None:
-        read_license = Access(name=os.getenv("READ_LICENSE"))
-        create_license = Access(name=os.getenv("CREATE_LICENSE"))
-        retrieve_file = Access(name=os.getenv("RETRIEVE_FILE"))
-        user_role_management = Access(name=os.getenv("USER_ROLE_MANAGEMENT"))
-        db.add_all([read_license, create_license, retrieve_file, user_role_management])
-        db.commit()
-        db.refresh(read_license)
-        db.refresh(create_license)
-        db.refresh(retrieve_file)
-        db.refresh(user_role_management)
+    crud.create_accesses(db)
     try:
         yield db
     finally:
@@ -48,7 +38,6 @@ async def startup():
 @app.post("/token")
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     auth, accesses, role = authenticate(form_data.username, form_data.password, db)
-    admin_email = "admin@admin.com"
 
     if auth:
         logger.bind(user=form_data.username).info("В систему вошел пользователь")
@@ -62,17 +51,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
 
         access_token = jwt.encode(token_data, os.getenv("SECRET_KEY"), algorithm="HS256")
 
-        if db.query(User).filter(User.username == "admin").first() is None:
-            user = User(username=form_data.username, email=admin_email, password=form_data.password, roles=[role])
-            db.add(user)
-            db.commit()
-            db.refresh(user)
-        elif db.query(User).filter(User.username == form_data.username).first() is None:
-            user = db.query(User).filter(User.username == form_data.username).first()
-            user = User(username=form_data.username, email=user.email, password=form_data.password, roles=[])
-            db.add(user)
-            db.commit()
-            db.refresh(user)
+        crud.add_authorized_user_in_db(form_data, role, db)
 
         return {
             "access_token": access_token,
