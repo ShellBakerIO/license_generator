@@ -1,3 +1,4 @@
+import json
 import re
 import shutil
 from datetime import datetime
@@ -36,6 +37,19 @@ def create_license(lic, machine_digest_file_name, lic_file_name):
     return license
 
 
+def form_file_name(lic):
+    today_date = datetime.now().strftime("%Y-%m-%d")
+    lic_file_name = (
+            transliterate_license_filename(lic.company_name, lic.product_name, lic.license_users_count)
+            + f"_{lic.exp_time}"
+    )
+    machine_digest_file_name = (
+            transliterate_license_filename(lic.company_name, lic.product_name, lic.license_users_count)
+            + f"_{today_date}"
+    )
+    return lic_file_name, machine_digest_file_name
+
+
 def add_license_in_db(db, lic, machine_digest_file_name, lic_file_name):
     license = create_license(lic, machine_digest_file_name, lic_file_name)
     db.add(license)
@@ -47,3 +61,27 @@ def save_machine_digest_file(machine_digest_file, machine_digest_file_name):
     path = f"files/machine_digest_files/{machine_digest_file_name}"
     with open(path, "wb+") as buffer:
         shutil.copyfileobj(machine_digest_file.file, buffer)
+
+
+def save_license_file(lic, additional_license_information, license_path, machine_digest_file_name, lic_file_name):
+    path = f"files/machine_digest_files/{machine_digest_file_name}"
+    product_key = open(path, "r", encoding="utf-8").read()
+
+    license_data = {
+        "company": lic.company_name,
+        "product_name": lic.product_name,
+        "license_users_count": lic.license_users_count,
+        "exp_time": str(lic.exp_time),
+        "product_key": product_key
+    }
+
+    if additional_license_information:
+        print(additional_license_information)
+        additional_license_information = json.loads(additional_license_information)
+        additional_info = {}
+        for key in additional_license_information:
+            additional_info[key] = additional_license_information[key]
+        license_data["additional_info"] = additional_info
+
+    with open(license_path, "w", encoding="utf-8") as f:
+        json.dump(license_data, f, ensure_ascii=False, indent=4)
