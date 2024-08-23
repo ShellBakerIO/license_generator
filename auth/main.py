@@ -48,7 +48,7 @@ async def startup():
 @app.post("/token")
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     auth, accesses, role = authenticate(form_data.username, form_data.password, db)
-    base_email = "pochta@adv.ru"
+    admin_email = "admin@admin.com"
 
     if auth:
         logger.bind(user=form_data.username).info("В систему вошел пользователь")
@@ -63,7 +63,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
         access_token = jwt.encode(token_data, os.getenv("SECRET_KEY"), algorithm="HS256")
 
         if db.query(User).filter(User.username == "admin").first() is None:
-            user = User(username=form_data.username, email=base_email, password=form_data.password, roles=[role])
+            user = User(username=form_data.username, email=admin_email, password=form_data.password, roles=[role])
             db.add(user)
             db.commit()
             db.refresh(user)

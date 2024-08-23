@@ -32,11 +32,6 @@ def is_valid_credentials(conn, user_password):
 
 
 def authenticate(user_name, user_password, db):
-    if user_name == "admin" and user_password == "admin":
-        accesses = db.query(Access).all()
-        accesses = [access.name for access in accesses]
-        return True, accesses, "Admin"
-
     user_name = db.query(User).filter(User.username == user_name).first()
 
     private_key = crud.load_private_key()

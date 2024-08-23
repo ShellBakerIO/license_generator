@@ -69,13 +69,6 @@ def get_users(db: Session):
 
 
 def create_user(db: Session, user: UserCreate):
-    if True:
-        db_user = User(username=user.username, email=user.email, password=user.password)
-        db.add(db_user)
-        db.commit()
-        db.refresh(db_user)
-        return db_user
-
     private_key = load_private_key()
     decrypted_password = decrypt_password(user.password, private_key)
     hashed_password = hash_password(decrypted_password)
