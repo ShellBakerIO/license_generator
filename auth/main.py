@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 import crud
 import schemas
 from ldap import authenticate
-from models import SessionLocal, engine, Base, Access, User
+from models import SessionLocal, engine, Base
 
 app = FastAPI(title="AdminService")
 router = APIRouter()

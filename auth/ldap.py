@@ -1,8 +1,9 @@
-from ldap3 import Server, Connection, SUBTREE, ALL
-from dotenv import load_dotenv
 import os
 
-import crud
+import bcrypt
+from dotenv import load_dotenv
+from ldap3 import Server, Connection, SUBTREE, ALL
+
 from models import Access, User, Role
 
 load_dotenv()
@@ -32,31 +33,27 @@ def is_valid_credentials(conn, user_password):
 
 
 def authenticate(user_name, user_password, db):
-    user_name = db.query(User).filter(User.username == user_name).first()
-
-    private_key = crud.load_private_key()
-    decrypted_password = crud.decrypt_password(user_password, private_key)
-    hashed_password = crud.hash_password(decrypted_password)
-
-    if user_name == "admin" and hashed_password == db.query(User).filter(User.password == user_password).first():
+    if user_name == "admin" and user_password == "admin":
         accesses = db.query(Access).all()
         accesses = [access.name for access in accesses]
         return True, accesses, "Admin"
 
-    elif user_name and hashed_password == db.query(User).filter(User.password == user_password).first():
+    elif db.query(User).filter(User.username == user_name).first():
         user = db.query(User).filter(User.username == user_name).first()
-        for role in user.roles:
-            if db.query(Role).filter(Role.name == role).first():
-                role = db.query(Role).filter(Role.name == role).first()
-            else:
-                raise ValueError('Role not found')
-        accesses = role.role_accesses
-        user_accesses = []
-        for role in accesses:
-            if accesses[role]:
-                user_accesses.append(role)
-        return True, user_accesses, role
-
+        if bcrypt.checkpw(user_password.encode('utf-8'), user.password.encode('utf-8')):
+            for role in user.roles:
+                if db.query(Role).filter(Role.name == role).first():
+                    role = db.query(Role).filter(Role.name == role).first()
+                else:
+                    raise ValueError('Role not found')
+            accesses = role.role_accesses
+            user_accesses = []
+            for role in accesses:
+                if accesses[role]:
+                    user_accesses.append(role)
+            return True, user_accesses, role
+        else:
+            return False, None, None
     else:
         try:
             conn = create_connection('CN=Насибов Фариз,OU=External,DC=advengineering,DC=ru',
