@@ -1,9 +1,9 @@
+import base64
 import os
 import re
 
 import bcrypt
 from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 from dotenv import load_dotenv
@@ -46,26 +46,49 @@ def add_authorized_user_in_db(form_data, role, db):
         db.refresh(user)
 
 
+def load_public_key():
+    public_key_data = os.getenv("PUBLIC_KEY")
+    if not public_key_data:
+        raise ValueError("Public key not found in environment variables")
+
+    try:
+        public_key = serialization.load_pem_public_key(
+            public_key_data.encode("utf-8"),
+            backend=default_backend()
+        )
+    except Exception as e:
+        raise ValueError(f"Failed to load public key: {e}")
+
+    return public_key
+
+
 def load_private_key():
     private_key_data = os.getenv("PRIVATE_KEY")
-    private_key = serialization.load_pem_private_key(
-        private_key_data.encode('utf-8'),
-        password=None,
-        backend=default_backend()
-    )
+    if not private_key_data:
+        raise ValueError("Private key not found in environment variables")
+
+    try:
+        private_key = serialization.load_pem_private_key(
+            private_key_data.encode('utf-8'),
+            password=None,
+            backend=default_backend()
+        )
+    except Exception as e:
+        raise ValueError(f"Failed to load private key: {e}")
+
     return private_key
 
 
 def decrypt_password(encrypted_password: str, private_key):
-    decrypted_password = private_key.decrypt(
-        encrypted_password,
-        padding.OAEP(
-            mgf=padding.MGF1(algorithm=hashes.SHA256()),
-            algorithm=hashes.SHA256(),
-            label=None
+    try:
+        encrypted_password_bytes = base64.b64decode(encrypted_password)
+        decrypted_password = private_key.decrypt(
+            encrypted_password_bytes,
+            padding.PKCS1v15()
         )
-    )
-    return decrypted_password.decode('utf-8')
+        return decrypted_password.decode('utf-8')
+    except Exception as e:
+        raise ValueError(f"Failed to decrypt password: {e}")
 
 
 def hash_password(password: str):
@@ -101,12 +124,11 @@ def create_user(db: Session, user: UserCreate):
     private_key = load_private_key()
     decrypted_password = decrypt_password(user.password, private_key)
     hashed_password = hash_password(decrypted_password)
-    user.password = hashed_password
 
     pattern = r"^\S+@\S+\.\S+$"
     match = re.fullmatch(pattern, user.email)
 
-    db_user = User(username=user.username, email=user.email, password=user.password)
+    db_user = User(username=user.username, email=user.email, password=hashed_password)
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
