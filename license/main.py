@@ -30,19 +30,20 @@ async def startup():
 
 @app.post("/generate_license")
 def generate_license(
-        additional_license_information: str | None,
-        lic: LicensesInfo = Depends(LicensesInfo.as_form),
-        machine_digest_file: UploadFile = File(...),
-        db: Session = Depends(get_db),
+    lic: LicensesInfo = Depends(LicensesInfo.as_form),
+    machine_digest_file: UploadFile = File(...),
+    db: Session = Depends(get_db),
 ):
     if machine_digest_file.content_type != "text/plain":
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="File type not supported")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="File type not supported"
+        )
 
     lic_file_name, machine_digest_file_name = crud.form_file_name(lic)
     crud.add_license_in_db(db, lic, machine_digest_file_name, lic_file_name)
     crud.save_machine_digest_file(machine_digest_file, machine_digest_file_name)
     license_path = f"files/licenses/{lic_file_name}.txt"
-    crud.save_license_file(lic, additional_license_information, license_path, machine_digest_file_name, lic_file_name)
+    crud.save_license_file(lic, license_path, machine_digest_file_name)
 
     logger.bind(lic_file_name=lic_file_name).info("Создана лицензия")
 
