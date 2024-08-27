@@ -1,5 +1,7 @@
 import os
 
+from fastapi import HTTPException
+
 import crud
 import bcrypt
 from dotenv import load_dotenv
@@ -46,7 +48,6 @@ def authenticate(user_name, user_password, db):
     elif user := db.query(User).filter(User.username == user_name).first():
         if bcrypt.checkpw(user_password.encode("utf-8"), user.password.encode("utf-8")):
             roles = db.query(Role).filter(Role.name.in_(user.roles)).all()
-            print([r.name for r in roles])
             accesses = [r.role_accesses for r in roles]
             user_accesses = []
             for role in roles:
@@ -55,10 +56,8 @@ def authenticate(user_name, user_password, db):
                         user_accesses.append(access)
             return True, user_accesses, roles
         else:
-            print("incorrect")
-            return False, [], []
+            return False, [], None
     else:
-        print("ldap")
         try:
             conn = create_connection(
                 "CN=Насибов Фариз,OU=External,DC=advengineering,DC=ru",
@@ -77,8 +76,7 @@ def authenticate(user_name, user_password, db):
             return is_valid_credentials(conn, user_password), [], None
 
         except Exception as e:
-            print(f"An error occurred: {e}")
-            return False, [], []
+            raise HTTPException(status_code=401, detail=str(e))
 
         finally:
             conn.unbind()

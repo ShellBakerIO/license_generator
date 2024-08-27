@@ -4,7 +4,7 @@ import shutil
 from datetime import datetime
 
 import transliterate
-from fastapi import HTTPException, status
+from fastapi import HTTPException
 
 from models import Licenses
 
@@ -21,10 +21,7 @@ def create_license(lic, machine_digest_file_name, lic_file_name):
     print("DATE", lic.exp_time)
     match = re.fullmatch(pattern, lic.exp_time)
     if match is None:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Invalid license date format. Correct format is YYYY-MM-DD",
-        )
+        raise HTTPException(status_code=422, detail="Invalid license date format. Correct format is YYYY-MM-DD")
     else:
         lic.exp_time = datetime.strptime(f"{match[0]}", "%Y-%m-%d")
 
@@ -70,11 +67,7 @@ def save_machine_digest_file(machine_digest_file, machine_digest_file_name):
         shutil.copyfileobj(machine_digest_file.file, buffer)
 
 
-def save_license_file(
-    lic,
-    license_path,
-    machine_digest_file_name,
-):
+def save_license_file(lic, license_path, machine_digest_file_name,):
     path = f"files/machine_digest_files/{machine_digest_file_name}"
     product_key = open(path, "r", encoding="utf-8").read()
 
