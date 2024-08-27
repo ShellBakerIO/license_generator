@@ -49,7 +49,7 @@ def add_authorized_user_in_db(form_data, role, db):
 def load_public_key():
     public_key_data = os.getenv("PUBLIC_KEY")
     if not public_key_data:
-        raise ValueError("Public key not found in environment variables")
+        raise HTTPException(status_code=404, detail="Public key not found in environment variables")
 
     try:
         public_key = serialization.load_pem_public_key(
@@ -57,7 +57,7 @@ def load_public_key():
             backend=default_backend()
         )
     except Exception as e:
-        raise ValueError(f"Failed to load public key: {e}")
+        raise HTTPException(status_code=404, detail=str(e))
 
     return public_key
 
@@ -65,7 +65,7 @@ def load_public_key():
 def load_private_key():
     private_key_data = os.getenv("PRIVATE_KEY")
     if not private_key_data:
-        raise ValueError("Private key not found in environment variables")
+        raise HTTPException(status_code=404, detail="Private key not found in environment variables")
 
     try:
         private_key = serialization.load_pem_private_key(
@@ -73,10 +73,9 @@ def load_private_key():
             password=None,
             backend=default_backend()
         )
+        return private_key
     except Exception as e:
-        raise ValueError(f"Failed to load private key: {e}")
-
-    return private_key
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 def decrypt_password(encrypted_password: str, private_key):
@@ -88,13 +87,16 @@ def decrypt_password(encrypted_password: str, private_key):
         )
         return decrypted_password.decode('utf-8')
     except Exception as e:
-        raise ValueError(f"Failed to decrypt password: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 def hash_password(password: str):
-    salt = bcrypt.gensalt()
-    hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
-    return hashed_password.decode('utf-8')
+    try:
+        salt = bcrypt.gensalt()
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
+        return hashed_password.decode('utf-8')
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Failed to hash password: {e}")
 
 
 def generate_access_dict(db: Session, role_id: int | None = None, access_id: int | None = None, has_access: bool = False):
@@ -121,6 +123,9 @@ def get_users(db: Session):
 
 
 def create_user(db: Session, user: UserCreate):
+    if db.query(User).filter(User.username == user.name).first():
+        raise HTTPException(status_code=409, detail="User already exists")
+
     private_key = load_private_key()
     decrypted_password = decrypt_password(user.password, private_key)
     hashed_password = hash_password(decrypted_password)
@@ -139,6 +144,8 @@ def delete_user(db: Session, id: int):
     user = db.get(User, id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    if os.getenv('USER_ROLE_MANAGEMENT') in user.roles:
+        raise HTTPException(status_code=403, detail="You are not allowed to delete this user")
 
     db.delete(user)
     db.commit()
@@ -151,6 +158,9 @@ def get_roles(db: Session):
 
 
 def create_role(db: Session, role: RoleCreate):
+    if db.query(Role).filter(Role.name == role.name).first():
+        raise HTTPException(status_code=409, detail="Role already exists")
+
     db_role = Role(name=role.name, role_accesses=generate_access_dict(db, role_id=None))
     db.add(db_role)
     db.commit()
@@ -173,9 +183,9 @@ def change_user_role(db: Session, user_id: int, role_id: int, added: bool):
     role = db.query(Role).filter(Role.id == role_id).first()
 
     if not user:
-        raise ValueError(f"Пользователя с ID {user_id} не существует")
+        raise HTTPException(status_code=404, detail="User not found")
     if not role:
-        raise ValueError(f"Роли с ID {role_id} не существует")
+        raise HTTPException(status_code=404, detail="Role not found")
 
     if user.roles is None:
         user.roles = []
@@ -203,9 +213,9 @@ def change_role_accesses(db: Session, role_id: int, access_id: int, has_access: 
     access = db.query(Access).filter(Access.id == access_id).first()
 
     if not role:
-        raise ValueError("Роль не найдена")
+        raise HTTPException(status_code=404, detail="Role not found")
     if not access:
-        raise ValueError("Доступ не найден")
+        raise HTTPException(status_code=404, detail="Access not found")
 
     role.role_accesses = generate_access_dict(db, role_id, access_id, has_access)
 
