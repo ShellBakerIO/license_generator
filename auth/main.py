@@ -4,7 +4,7 @@ from typing import List
 
 import jwt
 from fastapi import FastAPI, Depends
-from fastapi import HTTPException, status, APIRouter
+from fastapi import HTTPException, APIRouter
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from loguru import logger
 from sqlalchemy.orm import Session
@@ -75,10 +75,10 @@ async def read_users_me(token: str = Depends(oauth2_scheme)):
             }
     except jwt.ExpiredSignatureError:
         logger.bind(username=decoded_token["sub"]).error("Токен пользователя истек")
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired")
-    except jwt.PyJWTError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.PyJWTError or jwt.DecodeError:
         logger.bind(username=decoded_token["sub"]).error("Токен не найден")
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+        raise HTTPException(status_code=401, detail="Invalid token")
 
 
 @app.get("/public_key")
