@@ -26,7 +26,11 @@ async def startup():
 
 
 @app.post("/generate_license")
-def generate_license(lic: LicensesInfo = Depends(LicensesInfo.as_form), machine_digest_file: UploadFile = File(...), db: Session = Depends(get_db)):
+def generate_license(
+    lic: LicensesInfo = Depends(LicensesInfo.as_form),
+    machine_digest_file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+):
     if machine_digest_file.content_type != "text/plain":
         raise HTTPException(status_code=400, detail="File type not supported")
 
@@ -34,7 +38,13 @@ def generate_license(lic: LicensesInfo = Depends(LicensesInfo.as_form), machine_
     crud.add_license_in_db(db, lic, machine_digest_file_name, lic_file_name)
     crud.save_machine_digest_file(machine_digest_file, machine_digest_file_name)
     license_path = f"files/licenses/{lic_file_name}.txt"
-    crud.save_license_file(lic, license_path, machine_digest_file_name)
+    crud.save_license_file(
+        lic,
+        additional_license_information,
+        license_path,
+        machine_digest_file_name,
+        lic_file_name,
+    )
 
     logger.bind(lic_file_name=lic_file_name).info("Создана лицензия")
 
@@ -82,7 +92,9 @@ def find_machine_digest(id: int, db: Session = Depends(get_db)):
         return FileResponse(digest_path, filename=f"{license.machine_digest_file}")
     else:
         _logger.error("Попытка найти информацию о несуществующем машинном файле с id")
-        raise HTTPException(status_code=404, detail=f"Машинный файл с id-{id} не найден")
+        raise HTTPException(
+            status_code=404, detail=f"Машинный файл с id-{id} не найден"
+        )
 
 
 app.mount(

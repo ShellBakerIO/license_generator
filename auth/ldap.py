@@ -38,23 +38,25 @@ def is_valid_credentials(conn, user_password):
 
 
 def authenticate(user_name, user_password, db):
-    private_key = crud.load_private_key()
-    user_password = crud.decrypt_password(user_password, private_key)
     if user_name == "admin" and user_password == "admin":
         accesses = db.query(Access).all()
         accesses = [access.name for access in accesses]
         return True, accesses, "Admin"
 
-    elif user := db.query(User).filter(User.username == user_name).first():
+    elif db.query(User).filter(User.username == user_name).first():
+        user = db.query(User).filter(User.username == user_name).first()
         if bcrypt.checkpw(user_password.encode("utf-8"), user.password.encode("utf-8")):
-            roles = db.query(Role).filter(Role.name.in_(user.roles)).all()
-            accesses = [r.role_accesses for r in roles]
+            for role in user.roles:
+                if db.query(Role).filter(Role.name == role).first():
+                    role = db.query(Role).filter(Role.name == role).first()
+                else:
+                    raise ValueError("Role not found")
+            accesses = role.role_accesses
             user_accesses = []
-            for role in roles:
-                for access in role.role_accesses:
-                    if role.role_accesses[access]:
-                        user_accesses.append(access)
-            return True, user_accesses, roles
+            for role in accesses:
+                if accesses[role]:
+                    user_accesses.append(role)
+            return True, user_accesses, role
         else:
             return False, [], None
     else:
