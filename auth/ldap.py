@@ -1,5 +1,6 @@
 import os
 
+import crud
 import bcrypt
 from dotenv import load_dotenv
 from ldap3 import Server, Connection, SUBTREE, ALL
@@ -10,7 +11,9 @@ load_dotenv()
 
 
 def create_connection(user, user_password):
-    server = Server('ldap://adv-fs.advengineering.ru', port=389, use_ssl=False, get_info=ALL)
+    server = Server(
+        "ldap://adv-fs.advengineering.ru", port=389, use_ssl=False, get_info=ALL
+    )
     conn = Connection(server, user=user, password=user_password)
 
     return conn
@@ -33,44 +36,49 @@ def is_valid_credentials(conn, user_password):
 
 
 def authenticate(user_name, user_password, db):
+    private_key = crud.load_private_key()
+    user_password = crud.decrypt_password(user_password, private_key)
     if user_name == "admin" and user_password == "admin":
         accesses = db.query(Access).all()
         accesses = [access.name for access in accesses]
         return True, accesses, "Admin"
 
-    elif db.query(User).filter(User.username == user_name).first():
-        user = db.query(User).filter(User.username == user_name).first()
-        if bcrypt.checkpw(user_password.encode('utf-8'), user.password.encode('utf-8')):
-            for role in user.roles:
-                if db.query(Role).filter(Role.name == role).first():
-                    role = db.query(Role).filter(Role.name == role).first()
-                else:
-                    raise ValueError('Role not found')
-            accesses = role.role_accesses
+    elif user := db.query(User).filter(User.username == user_name).first():
+        if bcrypt.checkpw(user_password.encode("utf-8"), user.password.encode("utf-8")):
+            roles = db.query(Role).filter(Role.name.in_(user.roles)).all()
+            print([r.name for r in roles])
+            accesses = [r.role_accesses for r in roles]
             user_accesses = []
-            for role in accesses:
-                if accesses[role]:
-                    user_accesses.append(role)
-            return True, user_accesses, role
+            for role in roles:
+                for access in role.role_accesses:
+                    if role.role_accesses[access]:
+                        user_accesses.append(access)
+            return True, user_accesses, roles
         else:
-            return False, None, None
+            print("incorrect")
+            return False, [], []
     else:
+        print("ldap")
         try:
-            conn = create_connection('CN=Насибов Фариз,OU=External,DC=advengineering,DC=ru',
-                                     os.getenv('LDAP_PASSWORD'))
+            conn = create_connection(
+                "CN=Насибов Фариз,OU=External,DC=advengineering,DC=ru",
+                os.getenv("LDAP_PASSWORD"),
+            )
             conn.bind()
 
-            search_filter = f'(sAMAccountName={user_name})'
-            conn.search(search_base='DC=advengineering,DC=ru',
-                        search_filter=search_filter,
-                        search_scope=SUBTREE,
-                        attributes='userPrincipalName')
+            search_filter = f"(sAMAccountName={user_name})"
+            conn.search(
+                search_base="DC=advengineering,DC=ru",
+                search_filter=search_filter,
+                search_scope=SUBTREE,
+                attributes="userPrincipalName",
+            )
 
             return is_valid_credentials(conn, user_password), [], None
 
         except Exception as e:
             print(f"An error occurred: {e}")
-            return False
+            return False, [], []
 
         finally:
             conn.unbind()

@@ -22,6 +22,7 @@ class Licenses(Base):
     product_name = Column(String)
     license_users_count = Column(Integer)
     exp_time = Column(DateTime, default=date(day=20, month=4, year=2152))
+    additional_license_information = Column(String)
     machine_digest_file = Column(String)
     lic_file_name = Column(String)
 

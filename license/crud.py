@@ -11,7 +11,7 @@ from models import Licenses
 
 def transliterate_license_filename(company_name, product_name, license_users_count):
     russian_letter = f"{company_name}_{product_name}_{license_users_count}"
-    english_letter = transliterate.translit(russian_letter, 'ru', reversed=True)
+    english_letter = transliterate.translit(russian_letter, "ru", reversed=True)
 
     return english_letter
 
@@ -28,24 +28,31 @@ def create_license(lic, machine_digest_file_name, lic_file_name):
     else:
         lic.exp_time = datetime.strptime(f"{match[0]}", "%Y-%m-%d")
 
-        license = Licenses(company_name=lic.company_name,
-                           product_name=lic.product_name,
-                           license_users_count=lic.license_users_count,
-                           exp_time=lic.exp_time,
-                           machine_digest_file=machine_digest_file_name,
-                           lic_file_name=f"{lic_file_name}.txt")
+        license = Licenses(
+            company_name=lic.company_name,
+            product_name=lic.product_name,
+            license_users_count=lic.license_users_count,
+            exp_time=lic.exp_time,
+            additional_license_information=lic.additional_license_information,
+            machine_digest_file=machine_digest_file_name,
+            lic_file_name=f"{lic_file_name}.txt",
+        )
     return license
 
 
 def form_file_name(lic):
     today_date = datetime.now().strftime("%Y-%m-%d")
     lic_file_name = (
-            transliterate_license_filename(lic.company_name, lic.product_name, lic.license_users_count)
-            + f"_{lic.exp_time}"
+        transliterate_license_filename(
+            lic.company_name, lic.product_name, lic.license_users_count
+        )
+        + f"_{lic.exp_time}"
     )
     machine_digest_file_name = (
-            transliterate_license_filename(lic.company_name, lic.product_name, lic.license_users_count)
-            + f"_{today_date}"
+        transliterate_license_filename(
+            lic.company_name, lic.product_name, lic.license_users_count
+        )
+        + f"_{today_date}"
     )
     return lic_file_name, machine_digest_file_name
 
@@ -63,7 +70,11 @@ def save_machine_digest_file(machine_digest_file, machine_digest_file_name):
         shutil.copyfileobj(machine_digest_file.file, buffer)
 
 
-def save_license_file(lic, additional_license_information, license_path, machine_digest_file_name, lic_file_name):
+def save_license_file(
+    lic,
+    license_path,
+    machine_digest_file_name,
+):
     path = f"files/machine_digest_files/{machine_digest_file_name}"
     product_key = open(path, "r", encoding="utf-8").read()
 
@@ -72,12 +83,11 @@ def save_license_file(lic, additional_license_information, license_path, machine
         "product_name": lic.product_name,
         "license_users_count": lic.license_users_count,
         "exp_time": str(lic.exp_time),
-        "product_key": product_key
+        "product_key": product_key,
     }
 
-    if additional_license_information:
-        print(additional_license_information)
-        additional_license_information = json.loads(additional_license_information)
+    if lic.additional_license_information:
+        additional_license_information = json.loads(lic.additional_license_information)
         additional_info = {}
         for key in additional_license_information:
             additional_info[key] = additional_license_information[key]
