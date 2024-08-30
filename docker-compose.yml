@@ -1,18 +1,18 @@
 services:
   web:
-    build: 
+    build:
       context: ../license-generator-web
       dockerfile: ./dockerfile
     env_file:
       - ./.env
     container_name: web
-    ports: 
+    ports:
       - '10000:80'
     networks:
       - default
     depends_on:
       - gateway
-    
+
   gateway:
     build:
       context: gateway
