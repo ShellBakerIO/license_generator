@@ -5,6 +5,7 @@ services:
       dockerfile: ./dockerfile
     env_file:
       - ./.env
+    restart: unless-stopped
     container_name: web
     ports:
       - '10000:80'
@@ -19,6 +20,7 @@ services:
       dockerfile: ./Dockerfile
     env_file:
       - gateway/.env
+    restart: unless-stopped
     container_name: gateway
     command: sh -c "uvicorn main:app --reload --host 0.0.0.0"
     ports:
@@ -35,6 +37,7 @@ services:
       dockerfile: ./Dockerfile
     env_file:
       - auth/.env
+    restart: unless-stopped
     container_name: auth
     command: sh -c "alembic upgrade head && uvicorn main:app --reload --host 0.0.0.0"
     networks:
@@ -48,6 +51,7 @@ services:
 
   users_db:
     image: postgres:15
+    restart: unless-stopped
     container_name: users_db
     ports:
       - '5432:5432'
@@ -68,6 +72,7 @@ services:
       dockerfile: ./Dockerfile
     env_file:
       - license/.env
+    restart: unless-stopped
     container_name: license
     command: sh -c "alembic upgrade head && uvicorn main:app --reload --host 0.0.0.0"
     networks:
@@ -83,6 +88,7 @@ services:
 
   license_db:
     image: postgres:15
+    restart: unless-stopped
     container_name: license_db
     ports:
       - '5433:5432'

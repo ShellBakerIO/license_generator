@@ -32,12 +32,13 @@ def gateway_router(method,
                 payload = kwargs.get(payload_key)
                 data = crud.form_data(kwargs, payload, payload_key)
                 url = crud.form_url(service_url, path, kwargs)
-                response_data = await send_request(
+                response_data, response_code = await send_request(
                     url=url,
                     method=request_method,
                     data=data,
                     headers=headers
                 )
+                response.status_code = response_code
                 return response_data
             else:
                 try:
@@ -55,12 +56,13 @@ def gateway_router(method,
                         payload = kwargs.get(payload_key)
                         data = crud.form_data(kwargs, payload, payload_key)
                         url = crud.form_url(service_url, path, kwargs)
-                        response_data = await send_request(
+                        response_data, response_code = await send_request(
                             url=url,
                             method=request_method,
                             data=data,
                             headers=headers
                         )
+                        response.status_code = response_code
                         return response_data
                     else:
                         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No access")
@@ -76,9 +78,11 @@ async def send_request(url: str, method: str, data: Union[dict, FormData], heade
     try:
         async with aiohttp.ClientSession() as session:
             request = getattr(session, method)
+            response_code: int = 500
             if isinstance(data, dict):
                 async with request(url=url, json=data, headers=headers) as response:
                     content_type = response.headers.get('Content-Type', '')
+                    response_code = response.status
                     if 'application/json' in content_type:
                         data = await response.json()
                     elif 'text/plain' in content_type or 'application/octet-stream' in content_type:
@@ -93,6 +97,7 @@ async def send_request(url: str, method: str, data: Union[dict, FormData], heade
             else:
                 async with request(url=url, data=data, headers=headers) as response:
                     content_type = response.headers.get('Content-Type', '')
+                    response_code = response.status
                     if 'application/json' in content_type:
                         data = await response.json()
                     elif 'text/plain' in content_type or 'application/octet-stream' in content_type:
@@ -104,6 +109,6 @@ async def send_request(url: str, method: str, data: Union[dict, FormData], heade
                         return FileResponse(path=temp_file_path, filename=file_name)
                     else:
                         data = await response.read()
-            return data
+            return data, response_code 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
