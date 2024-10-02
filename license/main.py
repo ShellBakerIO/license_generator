@@ -30,15 +30,21 @@ def generate_license(lic: LicensesInfo = Depends(LicensesInfo.as_form), machine_
     if machine_digest_file.content_type != "text/plain":
         raise HTTPException(status_code=400, detail="File type not supported")
 
-    lic_file_name, machine_digest_file_name = crud.form_file_name(lic)
-    crud.add_license_in_db(db, lic, machine_digest_file_name, lic_file_name)
-    crud.save_machine_digest_file(machine_digest_file, machine_digest_file_name)
-    license_path = f"files/licenses/{lic_file_name}.txt"
-    crud.save_license_file(lic, license_path, machine_digest_file_name)
+    try:
+        lic_file_name, machine_digest_file_name = crud.form_file_name(lic)
+        crud.add_license_in_db(db, lic, machine_digest_file_name, lic_file_name)
+        crud.save_machine_digest_file(machine_digest_file, machine_digest_file_name)
+        license_path = f"files/licenses/{lic_file_name}.txt"
+        crud.save_license_file(lic, license_path, machine_digest_file_name)
 
-    logger.bind(lic_file_name=lic_file_name).info("Создана лицензия")
+        logger.bind(lic_file_name=lic_file_name).info("Создана лицензия")
 
-    return FileResponse(license_path, filename=f"{lic_file_name}.txt")
+        f = FileResponse(license_path, filename=f"{lic_file_name}.txt")
+    except Exception as e:
+        print(f"Error - {str(e)} - {e.with_traceback()}")
+        raise HTTPException(status_code=1337,
+                            detail=f"Error - {str(e)}")
+    return f
 
 
 @app.get("/all_licenses")
