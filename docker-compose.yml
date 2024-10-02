@@ -1,34 +1,113 @@
-version: "3.7"
 services:
-  db:
-    image: postgres:15
-    container_name: db_app
+  web:
+    build:
+      context: ../license-generator-web
+      dockerfile: ./dockerfile
+    env_file:
+      - ./.env
+    restart: unless-stopped
+    container_name: web
     ports:
-      - "5432:5432"
+      - '10000:80'
+    networks:
+      - default
+    depends_on:
+      - gateway
+
+  gateway:
+    build:
+      context: gateway
+      dockerfile: ./Dockerfile
+    env_file:
+      - gateway/.env
+    restart: unless-stopped
+    container_name: gateway
+    command: sh -c "uvicorn main:app --reload --host 0.0.0.0"
+    ports:
+      - '9999:8000'
+    networks:
+      - default
+    depends_on:
+      - auth
+      - license
+
+  auth:
+    build:
+      context: auth
+      dockerfile: ./Dockerfile
+    env_file:
+      - auth/.env
+    restart: unless-stopped
+    container_name: auth
+    command: sh -c "alembic upgrade head && uvicorn main:app --reload --host 0.0.0.0"
+    networks:
+      - default
+    depends_on:
+      - users_db
+    ports:
+      - '8030:8000'
+    volumes:
+      - ./auth/logs:/auth/logs
+
+  users_db:
+    image: postgres:15
+    restart: unless-stopped
+    container_name: users_db
+    ports:
+      - '5432:5432'
     networks:
       - default
     env_file:
-      - .env-non-dev
+      - auth/.env
     environment:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
       - POSTGRES_USER=${POSTGRES_USER?Variable not set}
       - POSTGRES_DB=${POSTGRES_DB?Variable not set}
     volumes:
-      - pg_data:/var/lib/postgresql/data
+      - users_data:/var/lib/postgresql/data
 
-  app:
+  license:
     build:
-      context: .
+      context: license
+      dockerfile: ./Dockerfile
     env_file:
-      - .env-non-dev
-    container_name: fastapi_app
-    command: ["/fastapi_app/docker/app.sh"]
-    ports:
-      - "9999:8000"
+      - license/.env
+    restart: unless-stopped
+    container_name: license
+    command: sh -c "alembic upgrade head && uvicorn main:app --reload --host 0.0.0.0"
     networks:
       - default
     depends_on:
-      - db
+      - license_db
+    ports:
+      - '8060:8000'
+    volumes:
+      - ./license/logs:/license/logs
+      - ./license/files/licenses:/license/files/licenses
+      - ./license/files/machine_digest_files:/license/files/machine_digest_files
+
+  license_db:
+    image: postgres:15
+    restart: unless-stopped
+    container_name: license_db
+    ports:
+      - '5433:5432'
+    networks:
+      - default
+    env_file:
+      - license/.env
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
+      - POSTGRES_USER=${POSTGRES_USER?Variable not set}
+      - POSTGRES_DB=${POSTGRES_DB?Variable not set}
+    volumes:
+      - licenses_data:/var/lib/postgresql/data
 
 volumes:
-  pg_data:
+  users_data:
+  licenses_data:
+  license_files:
+
+networks:
+  default:
+    name: adv_license
