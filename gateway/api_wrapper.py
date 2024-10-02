@@ -83,7 +83,6 @@ async def send_request(url: str, method: str, data: Union[dict, FormData],
     try:
         async with aiohttp.ClientSession() as session:
             request = getattr(session, method)
-            response_code: int = 500
             if isinstance(data, dict):
                 async with request(url=url, json=data,
                                    headers=headers) as response:
@@ -93,8 +92,8 @@ async def send_request(url: str, method: str, data: Union[dict, FormData],
                         data = await response.json()
                     elif 'text/plain' in content_type or 'application/octet-stream' in content_type:
                         file_name = \
-                        response.headers.get('Content-Disposition').split(
-                            "filename=")[1].strip('"')
+                            response.headers.get('Content-Disposition').split(
+                                "filename=")[1].strip('"')
                         file_content = await response.read()
                         temp_file_path = f'/tmp/{file_name}'
                         with open(temp_file_path, 'wb') as f:
@@ -112,8 +111,8 @@ async def send_request(url: str, method: str, data: Union[dict, FormData],
                         data = await response.json()
                     elif 'text/plain' in content_type or 'application/octet-stream' in content_type:
                         file_name = \
-                        response.headers.get('Content-Disposition').split(
-                            "filename=")[1].strip('"')
+                            response.headers.get('Content-Disposition').split(
+                                "filename=")[1].strip('"')
                         file_content = await response.read()
                         temp_file_path = f'/tmp/{file_name}'
                         with open(temp_file_path, 'wb') as f:
