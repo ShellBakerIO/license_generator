@@ -108,9 +108,9 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     return crud.create_user(db=db, user=user)
 
 
-@app.delete("/users", response_model=schemas.User)
-def delete_user(id: int, db: Session = Depends(get_db)):
-    user = crud.delete_user(db=db, id=id)
+@app.delete("/users/{user_id}", response_model=schemas.User)
+def delete_user(user_id: int, db: Session = Depends(get_db)):
+    user = crud.delete_user(db=db, id=user_id)
     logger.info("Пользователь удален")
     return user
 
@@ -128,9 +128,9 @@ def create_role(role: schemas.RoleCreate, db: Session = Depends(get_db)):
     return crud.create_role(db=db, role=role)
 
 
-@app.delete("/roles", response_model=schemas.Role)
-def delete_role(id: int, db: Session = Depends(get_db)):
-    role = crud.delete_role(db=db, id=id)
+@app.delete("/roles/{role_id}", response_model=schemas.Role)
+def delete_role(role_id: int, db: Session = Depends(get_db)):
+    role = crud.delete_role(db=db, id=role_id)
     logger.info("Роль удалена")
     return role
 
