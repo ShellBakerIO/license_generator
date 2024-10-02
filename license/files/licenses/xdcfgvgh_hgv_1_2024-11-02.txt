@@ -1,0 +1,8 @@
+{
+    "company": "xdcfgvgh",
+    "product_name": "hgv",
+    "license_users_count": 1,
+    "exp_time": "2024-11-02 00:00:00",
+    "product_key": "# ide\n../.idea/\n.idea\n.vs\n.vscode\nlicense/logs\nlicense/__pycache__/\nlicense/dto/__pycache__/\nlicense/migrations/__pycache__/\nlicense/logs/log.log\n\ngateway/__pycache__/\ngateway/dto/__pycache__/\n\nauth/migrations/__pycache__/\nauth/migrations/versions/__pycache__/\nauth/logs/\nauth/__pycache__/\n\n.venv",
+    "additional_info": {}
+}

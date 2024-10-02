@@ -99,7 +99,7 @@ async def send_request(url: str, method: str, data: Union[dict, FormData],
                         with open(temp_file_path, 'wb') as f:
                             f.write(file_content)
                         return FileResponse(path=temp_file_path,
-                                            filename=file_name)
+                                            filename=file_name), response_code
                     else:
                         data = await response.read()
             else:
@@ -118,7 +118,7 @@ async def send_request(url: str, method: str, data: Union[dict, FormData],
                         with open(temp_file_path, 'wb') as f:
                             f.write(file_content)
                         return FileResponse(path=temp_file_path,
-                                            filename=file_name)
+                                            filename=file_name), response_code
                     else:
                         data = await response.read()
             return data, response_code

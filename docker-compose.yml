@@ -23,8 +23,6 @@ services:
     restart: unless-stopped
     container_name: gateway
     command: sh -c "uvicorn main:app --reload --host 0.0.0.0"
-    ports:
-      - '9999:8000'
     networks:
       - default
     depends_on:
@@ -44,8 +42,6 @@ services:
       - default
     depends_on:
       - users_db
-    ports:
-      - '8030:8000'
     volumes:
       - ./auth/logs:/auth/logs
 
@@ -53,8 +49,6 @@ services:
     image: postgres:15
     restart: unless-stopped
     container_name: users_db
-    ports:
-      - '5432:5432'
     networks:
       - default
     env_file:
@@ -79,8 +73,6 @@ services:
       - default
     depends_on:
       - license_db
-    ports:
-      - '8060:8000'
     volumes:
       - ./license/logs:/license/logs
       - ./license/files/licenses:/license/files/licenses
@@ -90,8 +82,6 @@ services:
     image: postgres:15
     restart: unless-stopped
     container_name: license_db
-    ports:
-      - '5433:5432'
     networks:
       - default
     env_file:
