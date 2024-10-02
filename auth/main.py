@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List
 
 import jwt
@@ -48,7 +48,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(),
 
         token_data = {
             "sub": form_data.username,
-            "exp": datetime.utcnow() + timedelta(hours=3),
+            "exp": datetime.now(timezone.utc) + timedelta(hours=3),
             "claims": claims,
         }
 
