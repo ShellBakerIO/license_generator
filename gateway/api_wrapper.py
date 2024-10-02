@@ -68,7 +68,7 @@ def gateway_router(method,
                         raise HTTPException(
                             status_code=status.HTTP_403_FORBIDDEN,
                             detail="No access")
-                except jwt.InvalidSignatureError or jwt.DecodeError:
+                except (jwt.InvalidSignatureError, jwt.DecodeError):
                     raise HTTPException(
                         status_code=status.HTTP_401_UNAUTHORIZED,
                         detail="Invalid token")
