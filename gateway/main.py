@@ -132,7 +132,7 @@ def read_public_key(
 
 @gateway_router(
     app.get,
-    "/users/",
+    "/users",
     payload_key=None,
     service_url=os.environ.get("AUTH_SERVICE_URL"),
     access_level="USER_ROLE_MANAGEMENT",
@@ -147,7 +147,7 @@ def read_users(
 
 @gateway_router(
     app.post,
-    "/users/",
+    "/users",
     payload_key="user",
     service_url=os.environ.get("AUTH_SERVICE_URL"),
     access_level="USER_ROLE_MANAGEMENT",
@@ -163,7 +163,7 @@ def create_user(
 
 @gateway_router(
     app.delete,
-    "/users/",
+    "/users",
     payload_key="id",
     service_url=os.environ.get("AUTH_SERVICE_URL"),
     access_level="USER_ROLE_MANAGEMENT",
@@ -179,7 +179,7 @@ def delete_user(
 
 @gateway_router(
     app.get,
-    "/roles/",
+    "/roles",
     payload_key=None,
     service_url=os.environ.get("AUTH_SERVICE_URL"),
     access_level="USER_ROLE_MANAGEMENT",
@@ -194,7 +194,7 @@ def read_roles(
 
 @gateway_router(
     app.post,
-    "/roles/",
+    "/roles",
     payload_key="role",
     service_url=os.environ.get("AUTH_SERVICE_URL"),
     access_level="USER_ROLE_MANAGEMENT",
@@ -210,7 +210,7 @@ def create_role(
 
 @gateway_router(
     app.delete,
-    "/roles/",
+    "/roles",
     payload_key="id",
     service_url=os.environ.get("AUTH_SERVICE_URL"),
     access_level="USER_ROLE_MANAGEMENT",
@@ -226,7 +226,7 @@ def delete_role(
 
 @gateway_router(
     app.patch,
-    "/users/{user_id}/",
+    "/users/{user_id}",
     payload_key="role_to_user",
     service_url=os.environ.get("AUTH_SERVICE_URL"),
     access_level="USER_ROLE_MANAGEMENT",
@@ -242,7 +242,7 @@ async def change_user_role(
 
 @gateway_router(
     app.get,
-    "/accesses/",
+    "/accesses",
     payload_key=None,
     service_url=os.environ.get("AUTH_SERVICE_URL"),
     access_level="USER_ROLE_MANAGEMENT",
@@ -257,7 +257,7 @@ def read_accesses(
 
 @gateway_router(
     app.patch,
-    "/roles/{role_id}/",
+    "/roles/{role_id}",
     payload_key="access_to_role",
     service_url=os.environ.get("AUTH_SERVICE_URL"),
     access_level="USER_ROLE_MANAGEMENT",
