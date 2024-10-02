@@ -134,7 +134,7 @@ def get_users(db: Session):
 
 
 def create_user(db: Session, user: UserCreate):
-    if db.query(User).filter(User.username == user.name).first():
+    if db.query(User).filter(User.username == user.username).first():
         raise HTTPException(status_code=409, detail="User already exists")
 
     private_key = load_private_key()
