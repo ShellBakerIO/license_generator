@@ -96,47 +96,47 @@ def read_public_key():
     return public_key
 
 
-@app.get("/users/", response_model=List[schemas.User])
+@app.get("/users", response_model=List[schemas.User])
 def read_users(db: Session = Depends(get_db)):
     users = crud.get_users(db)
     logger.info("Выведен список пользователей")
     return users
 
 
-@app.post("/users/", response_model=schemas.User)
+@app.post("/users", response_model=schemas.User)
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     logger.info("Добавлен новый пользователь")
     return crud.create_user(db=db, user=user)
 
 
-@app.delete("/users/", response_model=schemas.User)
+@app.delete("/users", response_model=schemas.User)
 def delete_user(id: int, db: Session = Depends(get_db)):
     user = crud.delete_user(db=db, id=id)
     logger.info("Пользователь удален")
     return user
 
 
-@app.get("/roles/", response_model=List[schemas.Role])
+@app.get("/roles", response_model=List[schemas.Role])
 def read_roles(db: Session = Depends(get_db)):
     roles = crud.get_roles(db)
     logger.info("Выведен список ролей")
     return roles
 
 
-@app.post("/roles/", response_model=schemas.Role)
+@app.post("/roles", response_model=schemas.Role)
 def create_role(role: schemas.RoleCreate, db: Session = Depends(get_db)):
     logger.info("Добавлена новая роль")
     return crud.create_role(db=db, role=role)
 
 
-@app.delete("/roles/", response_model=schemas.Role)
+@app.delete("/roles", response_model=schemas.Role)
 def delete_role(id: int, db: Session = Depends(get_db)):
     role = crud.delete_role(db=db, id=id)
     logger.info("Роль удалена")
     return role
 
 
-@app.patch("/users/{user_id}/", response_model=schemas.User)
+@app.patch("/users/{user_id}", response_model=schemas.User)
 def change_user_role(role_to_user: schemas.Role_to_User,
                      db: Session = Depends(get_db)):
     try:
@@ -152,14 +152,14 @@ def change_user_role(role_to_user: schemas.Role_to_User,
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@app.get("/accesses/", response_model=List[schemas.Access])
+@app.get("/accesses", response_model=List[schemas.Access])
 def read_accesses(db: Session = Depends(get_db)):
     accesses = crud.get_accesses(db)
     logger.info("Выведен список доступов")
     return accesses
 
 
-@app.patch("/roles/{role_id}/", response_model=schemas.Role)
+@app.patch("/roles/{role_id}", response_model=schemas.Role)
 def change_role_accesses(access_to_role: schemas.Access_to_Role,
                          db: Session = Depends(get_db)):
     try:
