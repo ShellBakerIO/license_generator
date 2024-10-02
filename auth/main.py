@@ -71,22 +71,21 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(),
 
 @app.get("/users/me")
 async def read_users_me(token: str = Depends(oauth2_scheme)):
+    username = "Unknown user"
     try:
         decoded_token = jwt.decode(token, os.getenv("SECRET_KEY"),
                                    algorithms=["HS256"])
-        if decoded_token["exp"] >= datetime.utcnow().timestamp():
-            logger.bind(username=decoded_token["sub"]).info(
-                "Токен пользователя валиден")
-            return {
-                "sub": decoded_token["sub"],
-                "valid": True
-            }
+        username = decoded_token.get("sub", "Unknown user")
+        logger.bind(username=username).info("Токен пользователя валиден")
+        return {
+            "sub": username,
+            "valid": True
+        }
     except jwt.ExpiredSignatureError:
-        logger.bind(username=decoded_token["sub"]).error(
-            "Токен пользователя истек")
+        logger.bind(username=username).error("Токен пользователя истек")
         raise HTTPException(status_code=401, detail="Token expired")
-    except jwt.PyJWTError or jwt.DecodeError:
-        logger.bind(username=decoded_token["sub"]).error("Токен не найден")
+    except (jwt.PyJWTError, jwt.DecodeError):
+        logger.bind(username=username).error("Токен не найден")
         raise HTTPException(status_code=401, detail="Invalid token")
 
 
