@@ -5,9 +5,8 @@ from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy import create_engine
 from config import DB_USER, DB_PASS, DB_HOST, DB_PORT, DB_NAME
 
-
 sqlite_database = f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-engine = create_engine(sqlite_database, pool_pre_ping=True, echo=True)
+engine = create_engine(sqlite_database, pool_pre_ping=True, echo=False)
 
 
 class Base(DeclarativeBase):

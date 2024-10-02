@@ -23,7 +23,9 @@ def create_accesses(db):
         create_license = Access(name=os.getenv("CREATE_LICENSE"))
         retrieve_file = Access(name=os.getenv("RETRIEVE_FILE"))
         user_role_management = Access(name=os.getenv("USER_ROLE_MANAGEMENT"))
-        db.add_all([read_license, create_license, retrieve_file, user_role_management])
+        all = [read_license, create_license, retrieve_file,
+               user_role_management]
+        db.add_all(all)
         db.commit()
         db.refresh(read_license)
         db.refresh(create_license)
@@ -34,13 +36,17 @@ def create_accesses(db):
 def add_authorized_user_in_db(form_data, role, db):
     admin_email = "admin@admin.com"
     if db.query(User).filter(User.username == "admin").first() is None:
-        user = User(username=form_data.username, email=admin_email, password=form_data.password, roles=[role])
+        user = User(username=form_data.username, email=admin_email,
+                    password=form_data.password, roles=[role])
         db.add(user)
         db.commit()
         db.refresh(user)
-    elif db.query(User).filter(User.username == form_data.username).first() is None:
-        user = db.query(User).filter(User.username == form_data.username).first()
-        user = User(username=form_data.username, email=user.email, password=form_data.password, roles=[])
+    elif db.query(User).filter(
+            User.username == form_data.username).first() is None:
+        user = db.query(User).filter(
+            User.username == form_data.username).first()
+        user = User(username=form_data.username, email=user.email,
+                    password=form_data.password, roles=[])
         db.add(user)
         db.commit()
         db.refresh(user)
@@ -49,7 +55,8 @@ def add_authorized_user_in_db(form_data, role, db):
 def load_public_key():
     public_key_data = os.getenv("PUBLIC_KEY")
     if not public_key_data:
-        raise HTTPException(status_code=404, detail="Public key not found in environment variables")
+        raise HTTPException(status_code=404,
+                            detail="Public key not found in environment variables")
 
     try:
         public_key = serialization.load_pem_public_key(
@@ -65,7 +72,8 @@ def load_public_key():
 def load_private_key():
     private_key_data = os.getenv("PRIVATE_KEY")
     if not private_key_data:
-        raise HTTPException(status_code=404, detail="Private key not found in environment variables")
+        raise HTTPException(status_code=404,
+                            detail="Private key not found in environment variables")
 
     try:
         private_key = serialization.load_pem_private_key(
@@ -96,10 +104,13 @@ def hash_password(password: str):
         hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
         return hashed_password.decode('utf-8')
     except Exception as e:
-        raise HTTPException(status_code=401, detail=f"Failed to hash password: {e}")
+        raise HTTPException(status_code=401,
+                            detail=f"Failed to hash password: {e}")
 
 
-def generate_access_dict(db: Session, role_id: int | None = None, access_id: int | None = None, has_access: bool = False):
+def generate_access_dict(db: Session, role_id: int | None = None,
+                         access_id: int | None = None,
+                         has_access: bool = False):
     all_accesses = db.query(Access).all()
     role = db.query(Role).filter(Role.id == role_id).first()
     access_dict = {}
@@ -133,7 +144,8 @@ def create_user(db: Session, user: UserCreate):
     pattern = r"^\S+@\S+\.\S+$"
     match = re.fullmatch(pattern, user.email)
 
-    db_user = User(username=user.username, email=user.email, password=hashed_password)
+    db_user = User(username=user.username, email=user.email,
+                   password=hashed_password)
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
@@ -145,7 +157,8 @@ def delete_user(db: Session, id: int):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     if os.getenv('USER_ROLE_MANAGEMENT') in user.roles:
-        raise HTTPException(status_code=403, detail="You are not allowed to delete this user")
+        raise HTTPException(status_code=403,
+                            detail="You are not allowed to delete this user")
 
     db.delete(user)
     db.commit()
@@ -161,7 +174,8 @@ def create_role(db: Session, role: RoleCreate):
     if db.query(Role).filter(Role.name == role.name).first():
         raise HTTPException(status_code=409, detail="Role already exists")
 
-    db_role = Role(name=role.name, role_accesses=generate_access_dict(db, role_id=None))
+    db_role = Role(name=role.name,
+                   role_accesses=generate_access_dict(db, role_id=None))
     db.add(db_role)
     db.commit()
     db.refresh(db_role)
@@ -208,7 +222,8 @@ def get_accesses(db: Session):
     return db.query(Access).all()
 
 
-def change_role_accesses(db: Session, role_id: int, access_id: int, has_access: bool):
+def change_role_accesses(db: Session, role_id: int, access_id: int,
+                         has_access: bool):
     role = db.query(Role).filter(Role.id == role_id).first()
     access = db.query(Access).filter(Access.id == access_id).first()
 
@@ -217,7 +232,8 @@ def change_role_accesses(db: Session, role_id: int, access_id: int, has_access: 
     if not access:
         raise HTTPException(status_code=404, detail="Access not found")
 
-    role.role_accesses = generate_access_dict(db, role_id, access_id, has_access)
+    role.role_accesses = generate_access_dict(db, role_id, access_id,
+                                              has_access)
 
     flag_modified(role, "role_accesses")
     db.commit()
