@@ -9,7 +9,8 @@ from fastapi import HTTPException
 from models import Licenses
 
 
-def transliterate_license_filename(company_name, product_name, license_users_count):
+def transliterate_license_filename(company_name, product_name,
+                                   license_users_count):
     russian_letter = f"{company_name}_{product_name}_{license_users_count}"
     english_letter = transliterate.translit(russian_letter, "ru", reversed=True)
 
@@ -21,7 +22,8 @@ def create_license(lic, machine_digest_file_name, lic_file_name):
     print("DATE", lic.exp_time)
     match = re.fullmatch(pattern, lic.exp_time)
     if match is None:
-        raise HTTPException(status_code=422, detail="Invalid license date format. Correct format is YYYY-MM-DD")
+        raise HTTPException(status_code=422,
+                            detail="Invalid license date format. Correct format is YYYY-MM-DD")
     else:
         lic.exp_time = datetime.strptime(f"{match[0]}", "%Y-%m-%d")
 
@@ -40,16 +42,16 @@ def create_license(lic, machine_digest_file_name, lic_file_name):
 def form_file_name(lic):
     today_date = datetime.now().strftime("%Y-%m-%d")
     lic_file_name = (
-        transliterate_license_filename(
-            lic.company_name, lic.product_name, lic.license_users_count
-        )
-        + f"_{lic.exp_time}"
+            transliterate_license_filename(
+                lic.company_name, lic.product_name, lic.license_users_count
+            )
+            + f"_{lic.exp_time}"
     )
     machine_digest_file_name = (
-        transliterate_license_filename(
-            lic.company_name, lic.product_name, lic.license_users_count
-        )
-        + f"_{today_date}"
+            transliterate_license_filename(
+                lic.company_name, lic.product_name, lic.license_users_count
+            )
+            + f"_{today_date}"
     )
     return lic_file_name, machine_digest_file_name
 
@@ -67,7 +69,7 @@ def save_machine_digest_file(machine_digest_file, machine_digest_file_name):
         shutil.copyfileobj(machine_digest_file.file, buffer)
 
 
-def save_license_file(lic, license_path, machine_digest_file_name,):
+def save_license_file(lic, license_path, machine_digest_file_name, ):
     path = f"files/machine_digest_files/{machine_digest_file_name}"
     product_key = open(path, "r", encoding="utf-8").read()
 
@@ -80,7 +82,8 @@ def save_license_file(lic, license_path, machine_digest_file_name,):
     }
 
     if lic.additional_license_information:
-        additional_license_information = json.loads(lic.additional_license_information)
+        additional_license_information = json.loads(
+            lic.additional_license_information)
         additional_info = {}
         for key in additional_license_information:
             additional_info[key] = additional_license_information[key]

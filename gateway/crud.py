@@ -21,7 +21,8 @@ def form_data(kwargs, payload, payload_key):
             data.add_field("license_users_count", str(lic.license_users_count))
             data.add_field("exp_time", lic.exp_time)
             data.add_field(
-                "additional_license_information", lic.additional_license_information
+                "additional_license_information",
+                lic.additional_license_information
             )
             data.add_field(
                 "machine_digest_file",
