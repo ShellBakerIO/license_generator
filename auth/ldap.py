@@ -14,7 +14,10 @@ load_dotenv()
 
 def create_connection(user, user_password):
     server = Server(
-        "ldap://adv-fs.advengineering.ru", port=389, use_ssl=False, get_info=ALL
+        "ldap://adv-fs.advengineering.ru",
+        port=389,
+        use_ssl=False,
+        get_info=ALL
     )
     conn = Connection(server, user=user, password=user_password)
 
@@ -46,7 +49,8 @@ def authenticate(user_name, user_password, db):
         return True, accesses, "Admin"
 
     elif user := db.query(User).filter(User.username == user_name).first():
-        if bcrypt.checkpw(user_password.encode("utf-8"), user.password.encode("utf-8")):
+        if bcrypt.checkpw(user_password.encode("utf-8"),
+                          user.password.encode("utf-8")):
             roles = db.query(Role).filter(Role.name.in_(user.roles)).all()
             accesses = [r.role_accesses for r in roles]
             user_accesses = []

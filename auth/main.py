@@ -36,11 +36,14 @@ async def startup():
 
 
 @app.post("/token")
-async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    auth, accesses, role = authenticate(form_data.username, form_data.password, db)
+async def login(form_data: OAuth2PasswordRequestForm = Depends(),
+                db: Session = Depends(get_db)):
+    auth, accesses, role = authenticate(form_data.username, form_data.password,
+                                        db)
 
     if auth:
-        logger.bind(user=form_data.username).info("В систему вошел пользователь")
+        logger.bind(user=form_data.username).info(
+            "В систему вошел пользователь")
         claims = accesses
 
         token_data = {
@@ -49,7 +52,8 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
             "claims": claims,
         }
 
-        access_token = jwt.encode(token_data, os.getenv("SECRET_KEY"), algorithm="HS256")
+        access_token = jwt.encode(token_data, os.getenv("SECRET_KEY"),
+                                  algorithm="HS256")
 
         crud.add_authorized_user_in_db(form_data, role, db)
 
@@ -59,22 +63,27 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
         }
 
     else:
-        logger.bind(user=form_data.username).error("Неудачная попытка войти в систему")
-        raise HTTPException(status_code=400, detail="Incorrect username or password")
+        logger.bind(user=form_data.username).error(
+            "Неудачная попытка войти в систему")
+        raise HTTPException(status_code=400,
+                            detail="Incorrect username or password")
 
 
 @app.get("/users/me")
 async def read_users_me(token: str = Depends(oauth2_scheme)):
     try:
-        decoded_token = jwt.decode(token, os.getenv("SECRET_KEY"), algorithms=["HS256"])
+        decoded_token = jwt.decode(token, os.getenv("SECRET_KEY"),
+                                   algorithms=["HS256"])
         if decoded_token["exp"] >= datetime.utcnow().timestamp():
-            logger.bind(username=decoded_token["sub"]).info("Токен пользователя валиден")
+            logger.bind(username=decoded_token["sub"]).info(
+                "Токен пользователя валиден")
             return {
                 "sub": decoded_token["sub"],
                 "valid": True
             }
     except jwt.ExpiredSignatureError:
-        logger.bind(username=decoded_token["sub"]).error("Токен пользователя истек")
+        logger.bind(username=decoded_token["sub"]).error(
+            "Токен пользователя истек")
         raise HTTPException(status_code=401, detail="Token expired")
     except jwt.PyJWTError or jwt.DecodeError:
         logger.bind(username=decoded_token["sub"]).error("Токен не найден")
@@ -128,13 +137,15 @@ def delete_role(id: int, db: Session = Depends(get_db)):
 
 
 @app.patch("/users/{user_id}/", response_model=schemas.User)
-def change_user_role(role_to_user: schemas.Role_to_User, db: Session = Depends(get_db)):
+def change_user_role(role_to_user: schemas.Role_to_User,
+                     db: Session = Depends(get_db)):
     try:
         user = crud.change_user_role(db=db,
                                      user_id=role_to_user.user_id,
                                      role_id=role_to_user.role_id,
                                      added=role_to_user.added)
-        logger.info(f"Роль с ID {role_to_user.role_id} добавлена пользователю с ID {role_to_user.user_id}")
+        logger.info(
+            f"Роль с ID {role_to_user.role_id} добавлена пользователю с ID {role_to_user.user_id}")
         return user
     except ValueError as e:
         logger.error(str(e))
@@ -149,13 +160,17 @@ def read_accesses(db: Session = Depends(get_db)):
 
 
 @app.patch("/roles/{role_id}/", response_model=schemas.Role)
-def change_role_accesses(access_to_role: schemas.Access_to_Role, db: Session = Depends(get_db)):
+def change_role_accesses(access_to_role: schemas.Access_to_Role,
+                         db: Session = Depends(get_db)):
     try:
-        role = crud.change_role_accesses(db=db,
-                                         role_id=access_to_role.role_id,
-                                         access_id=access_to_role.access_id,
-                                         has_access=access_to_role.has_access)
-        logger.info(f"Доступ с ID {access_to_role.access_id} добавлен к роли с ID {access_to_role.role_id}")
+        access_id = access_to_role.access_id
+        role_id = access_to_role.role_id
+        has_access = access_to_role.has_access
+        role = crud.change_role_accesses(db=db, role_id=role_id,
+                                         access_id=access_id,
+                                         has_access=has_access)
+
+        logger.info(f"Доступ с ID {access_id} добавлен к роли с ID {role_id}")
         return role
     except ValueError as e:
         logger.error(str(e))
