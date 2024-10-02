@@ -3,17 +3,20 @@
 .idea
 .vs
 .vscode
+
 license/logs
+license/logs/log.log
+license/files
 license/__pycache__/
 license/dto/__pycache__/
 license/migrations/__pycache__/
-license/logs/log.log
 
 gateway/__pycache__/
 gateway/dto/__pycache__/
 
 auth/migrations/__pycache__/
 auth/migrations/versions/__pycache__/
+auth/logs
 auth/logs/
 auth/__pycache__/
 
