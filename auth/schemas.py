@@ -47,6 +47,11 @@ class UserBase(BaseModel):
     password: str
 
 
+class UserLDAP(UserBase):
+    login: str
+    email: Optional[EmailStr]
+
+
 class UserCreate(UserBase):
     pass
 
