@@ -180,7 +180,7 @@ def delete_user(
 @gateway_router(
     app.get,
     "/roles",
-    payload_key=None,
+    payload_key='',
     service_url=os.environ.get("AUTH_SERVICE_URL"),
     access_level="USER_ROLE_MANAGEMENT",
 )
