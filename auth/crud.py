@@ -1,6 +1,7 @@
 import base64
 import os
 import re
+from typing import List
 
 import bcrypt
 from cryptography.hazmat.backends import default_backend
@@ -12,7 +13,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 
 from models import User, Role, Access
-from schemas import UserCreate, RoleCreate
+from schemas import UserCreate, RoleCreate, UserBase
 
 load_dotenv()
 
@@ -33,20 +34,18 @@ def create_accesses(db):
         db.refresh(user_role_management)
 
 
-def add_authorized_user_in_db(form_data, role, db):
+def add_authorized_user_in_db(user: UserBase, role: List[str], db):
     admin_email = "admin@admin.com"
-    if db.query(User).filter(User.username == "admin").first() is None:
-        user = User(username=form_data.username, email=admin_email,
-                    password=form_data.password, roles=[role])
+    user_db = db.query(User).filter(User.username == user.login).first()
+    if user.username == "admin" and user_db is None:
+        user = User(username=user.username, email=admin_email,
+                    password=user.password, roles=[role])
         db.add(user)
         db.commit()
         db.refresh(user)
-    elif db.query(User).filter(
-            User.username == form_data.username).first() is None:
-        user = db.query(User).filter(
-            User.username == form_data.username).first()
-        user = User(username=form_data.username, email=user.email,
-                    password=form_data.password, roles=[])
+    elif user_db is None:
+        user = User(username=user.login, email=user.email,
+                    password=user.password, roles=role)
         db.add(user)
         db.commit()
         db.refresh(user)
