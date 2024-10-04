@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr
-from typing import List
+from typing import List, Optional, Union
 
 
 class Role_to_User(BaseModel):
@@ -47,13 +47,16 @@ class UserBase(BaseModel):
     password: str
 
 
+class UserLDAP(UserBase):
+    login: str
+    email: Optional[EmailStr]
+
+
 class UserCreate(UserBase):
     pass
 
 
-class User(UserBase):
-    id: int
-    roles: List[str]
-
-    class Config:
-        orm_mode = True
+class AccessEntries(BaseModel):
+    is_auth: bool
+    accesses: List[str]
+    role: Optional[Union[str, List[str], List[Role]]]
