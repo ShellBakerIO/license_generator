@@ -108,9 +108,9 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     return crud.create_user(db=db, user=user)
 
 
-@app.delete("/users/{user_id}", response_model=schemas.User)
-def delete_user(user_id: int, db: Session = Depends(get_db)):
-    user = crud.delete_user(db=db, id=user_id)
+@app.delete("/users{id}", response_model=schemas.User)
+def delete_user(id: int, db: Session = Depends(get_db)):
+    user = crud.delete_user(db=db, id=id)
     logger.info("Пользователь удален")
     return user
 
