@@ -94,7 +94,7 @@ def decrypt_password(encrypted_password: str, private_key):
         )
         return decrypted_password.decode('utf-8')
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return encrypted_password
 
 
 def hash_password(password: str):
