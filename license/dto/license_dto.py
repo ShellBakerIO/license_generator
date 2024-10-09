@@ -2,6 +2,7 @@ from datetime import date
 
 from fastapi import Form
 from pydantic import BaseModel
+from typing import Optional, List
 
 
 class LicensesInfo(BaseModel):
@@ -27,3 +28,24 @@ class LicensesInfo(BaseModel):
             exp_time=exp_time,
             additional_license_information=additional_license_information,
         )
+
+
+class SoftwareBase(BaseModel):
+    company_name: Optional[str] = None
+    required_attributes: Optional[List] = None
+    license_generator_path: Optional[str] = None
+
+
+class SoftwareCreate(SoftwareBase):
+    company_name: str
+
+
+class SoftwareUpdate(SoftwareBase):
+    pass
+
+
+class SoftwareResponse(SoftwareBase):
+    id: int
+
+    class Config:
+        from_attributes = True

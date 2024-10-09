@@ -5,8 +5,9 @@ from loguru import logger
 from sqlalchemy.orm import Session, sessionmaker
 
 import crud
-from dto.license_dto import LicensesInfo
-from models import engine, Licenses, Base
+from dto.license_dto import LicensesInfo, SoftwareResponse, SoftwareCreate, \
+    SoftwareUpdate
+from models import engine, Licenses, Base, Software
 
 app = FastAPI(title="LicenseService")
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -97,6 +98,64 @@ def find_machine_digest(license_id: int, db: Session = Depends(get_db)):
             "Попытка найти информацию о несуществующем машинном файле с id")
         raise HTTPException(status_code=404,
                             detail=f"Машинный файл с id-{license_id} не найден")
+
+
+@app.post("/software", response_model=SoftwareResponse)
+def create_software(software: SoftwareCreate, db: Session = Depends(get_db)):
+    new_software = Software(
+        company_name=software.company_name,
+        required_attributes=software.required_attributes,
+        license_generator_path=software.license_generator_path
+    )
+    db.add(new_software)
+    db.commit()
+    db.refresh(new_software)
+    return new_software
+
+
+@app.get("/software", response_model=List[SoftwareResponse])
+def get_softwares(db: Session = Depends(get_db)):
+    softwares = db.query(Software).all()
+    return softwares
+
+
+@app.get("/software/{software_id}", response_model=SoftwareResponse)
+def get_software(software_id: int, db: Session = Depends(get_db)):
+    software = db.query(Software).filter(Software.id == software_id).first()
+    if not software:
+        raise HTTPException(status_code=404, detail="Software not found")
+    return software
+
+
+@app.patch("/software", response_model=SoftwareResponse)
+def update_software(software: SoftwareUpdate, db: Session = Depends(get_db)):
+    existing_software = db.query(Software).filter(
+        Software.id == software.id).first()
+    if not existing_software:
+        raise HTTPException(status_code=404, detail="Software not found")
+
+    if software.company_name is not None:
+        existing_software.company_name = software.company_name
+    if software.required_attributes is not None:
+        existing_software.required_attributes = software.required_attributes
+    if software.license_generator_path is not None:
+        path = software.license_generator_path
+        existing_software.license_generator_path = path
+
+    db.commit()
+    db.refresh(existing_software)
+    return existing_software
+
+
+@app.delete("/software/{software_id}")
+def delete_software(software_id: int, db: Session = Depends(get_db)):
+    software = db.query(Software).filter(Software.id == software_id).first()
+    if not software:
+        raise HTTPException(status_code=404, detail="Software not found")
+
+    db.delete(software)
+    db.commit()
+    return {"detail": "Software deleted successfully"}
 
 
 app.mount(

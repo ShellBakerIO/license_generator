@@ -1,7 +1,7 @@
 from datetime import date
 
 from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, DateTime, ARRAY
 from sqlalchemy import create_engine
 from config import DB_USER, DB_PASS, DB_HOST, DB_PORT, DB_NAME
 
@@ -24,6 +24,15 @@ class Licenses(Base):
     additional_license_information = Column(String)
     machine_digest_file = Column(String)
     lic_file_name = Column(String)
+
+
+class Software(Base):
+    __tablename__ = "Software"
+
+    id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
+    company_name = Column(String, nullable=False)
+    required_attributes = Column(ARRAY(String), nullable=True)
+    license_generator_path = Column(String, nullable=True)
 
 
 Base.metadata.create_all(bind=engine)
