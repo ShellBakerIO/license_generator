@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
 from api_wrapper import gateway_router
-from dto.license import LicensesInfo
+from dto.license import LicensesInfo, SoftwareCreate, SoftwareUpdate
 from dto.user import UserCreate, RoleCreate, Access_to_Role, Role_to_User
 
 app = FastAPI()
@@ -264,6 +264,87 @@ def read_accesses(
 )
 async def change_role_accesses(
     access_to_role: Access_to_Role,
+    token: Annotated[str, Depends(oauth2_scheme)],
+    request: Request,
+    response: Response,
+):
+    pass
+
+
+
+@gateway_router(
+    app.get,
+    "/software",
+    payload_key='',
+    service_url=os.environ.get("LICENSE_SERVICE_URL"),
+    access_level="READ_LICENSE",
+)
+async def get_software(
+    token: Annotated[str, Depends(oauth2_scheme)],
+    request: Request,
+    response: Response,
+):
+    pass
+
+
+@gateway_router(
+    app.post,
+    "/software",
+    payload_key="software",
+    service_url=os.environ.get("LICENSE_SERVICE_URL"),
+    access_level="CREATE_LICENSE",
+)
+async def create_software(
+    token: Annotated[str, Depends(oauth2_scheme)],
+    request: Request,
+    response: Response,
+    software: SoftwareCreate
+):
+    pass
+
+
+
+@gateway_router(
+    app.get,
+    "/software/{software_id}",
+    payload_key='',
+    service_url=os.environ.get("LICENSE_SERVICE_URL"),
+    access_level="RETRIEVE_FILE",
+)
+async def get_software(
+    software_id: int,
+    token: Annotated[str, Depends(oauth2_scheme)],
+    request: Request,
+    response: Response,
+):
+    pass
+
+
+@gateway_router(
+    app.patch,
+    "/software",
+    payload_key="software",
+    service_url=os.environ.get("AUTH_SERVICE_URL"),
+    access_level="USER_ROLE_MANAGEMENT",
+)
+async def change_user_role(
+    software: SoftwareUpdate,
+    token: Annotated[str, Depends(oauth2_scheme)],
+    request: Request,
+    response: Response,
+):
+    pass
+
+
+@gateway_router(
+    app.delete,
+    "/software/{software_id}",
+    payload_key="",
+    service_url=os.environ.get("AUTH_SERVICE_URL"),
+    access_level="USER_ROLE_MANAGEMENT",
+)
+def delete_user(
+    software_id: int,
     token: Annotated[str, Depends(oauth2_scheme)],
     request: Request,
     response: Response,
