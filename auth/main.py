@@ -38,33 +38,30 @@ async def startup():
 @app.post("/token")
 async def login(form_data: OAuth2PasswordRequestForm = Depends(),
                 db: Session = Depends(get_db)):
-    auth, accesses, role = authenticate(form_data.username, form_data.password,
-                                        db)
-
+    authenticate_obj = authenticate(form_data.username,
+                                        form_data.password, db)
+    auth = authenticate_obj.is_auth
+    accesses = authenticate_obj.accesses
     if auth:
-        logger.bind(user=form_data.username).info(
-            "В систему вошел пользователь")
+        username = form_data.username
+        logger.bind(user=username).info("В систему вошел пользователь")
         claims = accesses
 
         token_data = {
-            "sub": form_data.username,
+            "sub": username,
             "exp": datetime.now(timezone.utc) + timedelta(hours=3),
             "claims": claims,
         }
-
         access_token = jwt.encode(token_data, os.getenv("SECRET_KEY"),
                                   algorithm="HS256")
-
-        crud.add_authorized_user_in_db(form_data, role, db)
-
         return {
             "access_token": access_token,
             "token_type": "Bearer",
         }
 
     else:
-        logger.bind(user=form_data.username).error(
-            "Неудачная попытка войти в систему")
+        msg = "Неудачная попытка войти в систему"
+        logger.bind(user=form_data.username).error(msg)
         raise HTTPException(status_code=400,
                             detail="Incorrect username or password")
 
