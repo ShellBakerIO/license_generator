@@ -341,7 +341,7 @@ async def get_software(
     app.delete,
     "/software/{software_id}",
     payload_key="",
-    service_url=os.environ.get("AUTH_SERVICE_URL"),
+    service_url=os.environ.get("LICENSE_SERVICE_URL"),
     access_level="USER_ROLE_MANAGEMENT",
 )
 def delete_user(
