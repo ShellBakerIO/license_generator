@@ -31,6 +31,7 @@ class LicensesInfo(BaseModel):
 
 
 class SoftwareBase(BaseModel):
+    id: int
     company_name: Optional[str] = None
     required_attributes: Optional[List] = None
     license_generator_path: Optional[str] = None

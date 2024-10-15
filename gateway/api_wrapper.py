@@ -19,7 +19,6 @@ def gateway_router(method,
                    access_level: str | None = None,
                    response_model: Optional[Any] = None):
     app_method = method(path, response_model=response_model)
-
     def wrapper(endpoint):
         @app_method
         @wraps(endpoint)
@@ -32,6 +31,7 @@ def gateway_router(method,
                 payload = kwargs.get(payload_key)
                 data = crud.form_data(kwargs, payload, payload_key)
                 url = crud.form_url(service_url, path, kwargs)
+                
                 response_data, response_code = await send_request(
                     url=url,
                     method=request_method,

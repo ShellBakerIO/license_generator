@@ -286,6 +286,20 @@ async def get_software(
 ):
     pass
 
+@gateway_router(
+    app.patch,
+    "/software",
+    payload_key="software",
+    service_url=os.environ.get("LICENSE_SERVICE_URL"),
+    access_level="USER_ROLE_MANAGEMENT",
+)
+async def change_user_role(
+    software: SoftwareUpdate,
+    token: Annotated[str, Depends(oauth2_scheme)],
+    request: Request,
+    response: Response,
+):
+    pass 
 
 @gateway_router(
     app.post,
@@ -320,20 +334,7 @@ async def get_software(
     pass
 
 
-@gateway_router(
-    app.patch,
-    "/software",
-    payload_key="software",
-    service_url=os.environ.get("AUTH_SERVICE_URL"),
-    access_level="USER_ROLE_MANAGEMENT",
-)
-async def change_user_role(
-    software: SoftwareUpdate,
-    token: Annotated[str, Depends(oauth2_scheme)],
-    request: Request,
-    response: Response,
-):
-    pass
+
 
 
 @gateway_router(

@@ -3,6 +3,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from loguru import logger
 from sqlalchemy.orm import Session, sessionmaker
+from typing import List
 
 import crud
 from dto.license_dto import LicensesInfo, SoftwareResponse, SoftwareCreate, \
@@ -112,21 +113,6 @@ def create_software(software: SoftwareCreate, db: Session = Depends(get_db)):
     db.refresh(new_software)
     return new_software
 
-
-@app.get("/software", response_model=List[SoftwareResponse])
-def get_softwares(db: Session = Depends(get_db)):
-    softwares = db.query(Software).all()
-    return softwares
-
-
-@app.get("/software/{software_id}", response_model=SoftwareResponse)
-def get_software(software_id: int, db: Session = Depends(get_db)):
-    software = db.query(Software).filter(Software.id == software_id).first()
-    if not software:
-        raise HTTPException(status_code=404, detail="Software not found")
-    return software
-
-
 @app.patch("/software", response_model=SoftwareResponse)
 def update_software(software: SoftwareUpdate, db: Session = Depends(get_db)):
     existing_software = db.query(Software).filter(
@@ -145,6 +131,22 @@ def update_software(software: SoftwareUpdate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(existing_software)
     return existing_software
+
+@app.get("/software", response_model=List[SoftwareResponse])
+def get_softwares(db: Session = Depends(get_db)):
+    softwares = db.query(Software).all()
+    return softwares
+
+
+@app.get("/software/{software_id}", response_model=SoftwareResponse)
+def get_software(software_id: int, db: Session = Depends(get_db)):
+    software = db.query(Software).filter(Software.id == software_id).first()
+    if not software:
+        raise HTTPException(status_code=404, detail="Software not found")
+    return software
+
+
+
 
 
 @app.delete("/software/{software_id}")
