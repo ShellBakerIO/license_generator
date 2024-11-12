@@ -164,13 +164,13 @@ def create_user(
 
 @gateway_router(
     app.delete,
-    "/users",
-    payload_key="id",
+    "/users/{user_id}",
+    payload_key=None,
     service_url=os.environ.get("AUTH_SERVICE_URL"),
     access_level="USER_ROLE_MANAGEMENT",
 )
 def delete_user(
-    id: int,
+    user_id: int,
     token: Annotated[str, Depends(oauth2_scheme)],
     request: Request,
     response: Response,
@@ -211,13 +211,13 @@ def create_role(
 
 @gateway_router(
     app.delete,
-    "/roles",
-    payload_key="id",
+    "/roles/{role_id}",
+    payload_key=None,
     service_url=os.environ.get("AUTH_SERVICE_URL"),
     access_level="USER_ROLE_MANAGEMENT",
 )
 def delete_role(
-    id: int,
+    role_id: int,
     token: Annotated[str, Depends(oauth2_scheme)],
     request: Request,
     response: Response,
@@ -270,7 +270,6 @@ async def change_role_accesses(
     response: Response,
 ):
     pass
-
 
 
 @gateway_router(
@@ -340,8 +339,8 @@ async def change_software(
 @gateway_router(
     app.delete,
     "/software/{software_id}",
-    payload_key="",
-    service_url=os.environ.get("AUTH_SERVICE_URL"),
+    payload_key=None,
+    service_url=os.environ.get("LICENSE_SERVICE_URL"),
     access_level="USER_ROLE_MANAGEMENT",
 )
 def delete_software(
