@@ -67,3 +67,9 @@ class AccessEntries(BaseModel):
     is_auth: bool
     accesses: List[str]
     role: Optional[Union[str, List[str], List[Role]]]
+
+class AccessToRolePatch(BaseModel):
+    role_id: Optional[int]
+    name: Optional[str] = None
+    access_id: Optional[int] = None
+    has_access: Optional[bool]
