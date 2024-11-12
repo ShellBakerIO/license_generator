@@ -239,3 +239,19 @@ def change_role_accesses(db: Session, role_id: int, access_id: int,
     db.refresh(role)
 
     return role
+
+
+def patch_role(db: Session, role_id: int, role_patch: AccessToRolePatch):
+    role = db.query(Role).filter(Role.id == role_id).first()
+    access = db.query(Access).filter(Access.id == role_patch.access_id).first()
+    if not role:
+        raise HTTPException(status_code=404, detail="Role not found")
+    if access:
+        role.role_accesses = generate_access_dict(db, role_id, role_patch.access_id,
+                                                  role_patch.has_access)
+    if role_patch.name:
+        role.name = role_patch.name
+        flag_modified(role, "role_accesses")
+    db.commit()
+    db.refresh(role)
+    return role

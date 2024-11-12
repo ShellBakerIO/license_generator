@@ -7,7 +7,8 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
 from api_wrapper import gateway_router
 from dto.license import LicensesInfo, SoftwareCreate, SoftwareUpdate
-from dto.user import UserCreate, RoleCreate, Access_to_Role, Role_to_User
+from dto.user import UserCreate, RoleCreate, Access_to_Role, Role_to_User, \
+    AccessToRolePatch
 
 app = FastAPI()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token")
@@ -263,7 +264,7 @@ def read_accesses(
     access_level="USER_ROLE_MANAGEMENT",
 )
 async def change_role_accesses(
-    access_to_role: Access_to_Role,
+    access_to_role: AccessToRolePatch,
     token: Annotated[str, Depends(oauth2_scheme)],
     request: Request,
     response: Response,
