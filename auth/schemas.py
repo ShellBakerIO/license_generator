@@ -22,7 +22,7 @@ class Access(AccessBase):
     id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class RoleBase(BaseModel):
@@ -38,7 +38,7 @@ class Role(RoleBase):
     role_accesses: dict
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class UserBase(BaseModel):
@@ -47,21 +47,20 @@ class UserBase(BaseModel):
     password: str
 
 
+class UserLDAP(UserBase):
+    login: str
+    email: Optional[EmailStr]
+
+class UserCreate(UserBase):
+    pass
+
+
 class User(UserBase):
     id: int
     roles: List[str]
 
     class Config:
         from_attributes = True
-
-
-class UserLDAP(UserBase):
-    login: str
-    email: Optional[EmailStr]
-
-
-class UserCreate(UserBase):
-    pass
 
 
 class AccessEntries(BaseModel):
