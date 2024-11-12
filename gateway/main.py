@@ -324,10 +324,10 @@ async def get_software(
     app.patch,
     "/software",
     payload_key="software",
-    service_url=os.environ.get("AUTH_SERVICE_URL"),
+    service_url=os.environ.get("LICENSE_SERVICE_URL"),
     access_level="USER_ROLE_MANAGEMENT",
 )
-async def change_user_role(
+async def change_software(
     software: SoftwareUpdate,
     token: Annotated[str, Depends(oauth2_scheme)],
     request: Request,
@@ -343,7 +343,7 @@ async def change_user_role(
     service_url=os.environ.get("AUTH_SERVICE_URL"),
     access_level="USER_ROLE_MANAGEMENT",
 )
-def delete_user(
+def delete_software(
     software_id: int,
     token: Annotated[str, Depends(oauth2_scheme)],
     request: Request,

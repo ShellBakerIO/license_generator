@@ -39,7 +39,7 @@ async def startup():
 async def login(form_data: OAuth2PasswordRequestForm = Depends(),
                 db: Session = Depends(get_db)):
     authenticate_obj = authenticate(form_data.username,
-                                        form_data.password, db)
+                                    form_data.password, db)
     auth = authenticate_obj.is_auth
     accesses = authenticate_obj.accesses
     if auth:
@@ -156,17 +156,15 @@ def read_accesses(db: Session = Depends(get_db)):
 
 
 @app.patch("/roles/{role_id}", response_model=schemas.Role)
-def change_role_accesses(access_to_role: schemas.Access_to_Role,
+def change_role_accesses(access_to_role: schemas.AccessToRolePatch,
                          db: Session = Depends(get_db)):
     try:
-        access_id = access_to_role.access_id
         role_id = access_to_role.role_id
-        has_access = access_to_role.has_access
-        role = crud.change_role_accesses(db=db, role_id=role_id,
-                                         access_id=access_id,
-                                         has_access=has_access)
-
-        logger.info(f"Доступ с ID {access_id} добавлен к роли с ID {role_id}")
+        role = crud.patch_role(db=db, role_id=role_id, role_patch=access_to_role)
+        if access_to_role.access_id:
+            logger.info(f"Доступ с ID {access_to_role.access_id} добавлен к роли с ID {role_id}")
+        else:
+            logger.info(f"Произошли изменения {access_to_role} у роли с ID {role_id}")
         return role
     except ValueError as e:
         logger.error(str(e))

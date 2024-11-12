@@ -1,6 +1,7 @@
 import base64
 import os
 import re
+from dataclasses import asdict
 from typing import List
 
 import bcrypt
@@ -13,7 +14,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 
 from models import User, Role, Access
-from schemas import UserCreate, RoleCreate, UserBase
+from schemas import UserCreate, RoleCreate, UserBase, AccessToRolePatch
 
 load_dotenv()
 
@@ -24,9 +25,8 @@ def create_accesses(db):
         create_license = Access(name=os.getenv("CREATE_LICENSE"))
         retrieve_file = Access(name=os.getenv("RETRIEVE_FILE"))
         user_role_management = Access(name=os.getenv("USER_ROLE_MANAGEMENT"))
-        all = [read_license, create_license, retrieve_file,
-               user_role_management]
-        db.add_all(all)
+        db.add_all(
+            [read_license, create_license, retrieve_file, user_role_management])
         db.commit()
         db.refresh(read_license)
         db.refresh(create_license)
@@ -135,11 +135,11 @@ def get_users(db: Session):
 def create_user(db: Session, user: UserCreate):
     if db.query(User).filter(User.username == user.username).first():
         raise HTTPException(status_code=409, detail="User already exists")
-
-    private_key = load_private_key()
-    decrypted_password = decrypt_password(user.password, private_key)
+    decrypted_password = user.password
+    if len(user.password) > 30:
+        private_key = load_private_key()
+        decrypted_password = decrypt_password(user.password, private_key)
     hashed_password = hash_password(decrypted_password)
-
     pattern = r"^\S+@\S+\.\S+$"
     match = re.fullmatch(pattern, user.email)
 
